@@ -43,8 +43,13 @@ python -m http.server 8000
 # abra http://localhost:8000 — entre com admin + senha criada no passo 3
 ```
 
-### 3. GitHub Pages (opcional)
-Settings → Pages → Deploy from branch (`main`, `/root`). Os caminhos `assets/...` são relativos, funcionam em subpath sem mudança.
+### 3. GitHub Pages (deploy automático)
+O deploy é via **GitHub Actions** (`.github/workflows/deploy-pages.yml`), que gera o
+`config.js` na hora a partir de secrets — a chave **nunca entra no repo**:
+1. No repo: **Settings → Secrets → Actions → New repository secret**:
+   `SUPABASE_URL` e `SUPABASE_KEY` (mesmos valores do `config.js` local).
+2. **Settings → Pages → Source: GitHub Actions**.
+3. Todo push na `main` publica sozinho. URL: `https://<usuario>.github.io/saida-carga-codeba/`.
 
 ## Segurança
 - Senhas com hash no Supabase Auth; perfis vinculados pelo id imutável da conta.
