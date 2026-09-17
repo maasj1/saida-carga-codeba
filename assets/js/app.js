@@ -1201,14 +1201,36 @@ function printSecaoAutenticacao(d) {
 
 function renderQrPrint(d) {
   var qrStr = 'CODEBA|'+d.numCarga+'|'+d.consignatario+'|'+d.placa+'|'+d.responsavel+'|'+d.emitidoEm;
-  g('print-qr').innerHTML = '';
+  var box = g('print-qr');
+  if (!box) return;
+  box.innerHTML = '';
   try {
-    new QRCode(g('print-qr'), {
-      text: qrStr, width:90, height:90,
+    if (typeof QRCode === 'undefined') throw new Error('lib qrcodejs nao carregada (CDN)');
+    // Gera num nó temporário e congela como imagem data-URL: <img> embutida
+    // imprime com fidelidade, sem depender do timing canvas→img da lib nem do
+    // elemento estar visível na tela (o documento de impressão é display:none).
+    // Gera em 180px e exibe em ~64pt para sair nítido no papel.
+    var tmp = document.createElement('div');
+    new QRCode(tmp, {
+      text: qrStr, width:180, height:180,
       colorDark:'#1a3a6e', colorLight:'#ffffff',
       correctLevel: QRCode.CorrectLevel.M
     });
-  } catch(e) { console.warn('QR:',e); }
+    var canvas = tmp.querySelector('canvas');
+    if (canvas && canvas.toDataURL) {
+      var img = document.createElement('img');
+      img.src = canvas.toDataURL('image/png');
+      img.alt = 'QR de autenticidade ' + d.numCarga;
+      img.style.width = '64pt';
+      img.style.height = '64pt';
+      box.appendChild(img);
+    } else {
+      box.appendChild(tmp); // fallback: usa o original (canvas/tabela)
+    }
+  } catch(e) {
+    console.error('QR indisponivel:', (e && e.message) || e);
+    box.innerHTML = '<span style="font-size:7pt;color:#666;word-break:break-all">' + x(qrStr) + '</span>';
+  }
 }
 
 // Orquestra a montagem do documento de impressão.
@@ -1220,8 +1242,11 @@ function buildPrint(d) {
     ? '<div class="pf"><label>Navio</label><span>'+x(d.navio)+'</span></div>'
     : '';
 
+  // Data de emissão (só a data, sem a hora) para o cabeçalho do documento.
+  var dataEmissaoCab = String(d.emitidoEm || '').split(',')[0].trim() || String(d.emitidoEm || '');
+
   g('print-document').innerHTML = [
-    '<div class="flex items-center justify-between border-b-2 border-slate-800 pb-4 mb-4 pt-2"><!-- Lado Esquerdo: Logo oficial (mantida no tamanho ampliado) --><div><img src="assets/img/logo-codeba.png" alt="CODEBA Autoridade Portuária" style="height: 65px !important; width: auto !important; max-height: none !important;" class="object-contain"></div><!-- Lado Direito: Título do Documento e Número da OS --><div class="text-right"><h1 class="text-xl font-extrabold text-slate-900 tracking-wide uppercase leading-tight">Ordem de Saída de Carga</h1><p class="text-lg font-bold text-blue-900 mt-0.5">Nº <span id="print-os-numero">OS-2026-00001</span></p><p class="text-xs text-slate-500">Emitido em: <span id="print-os-data">09/09/2026</span></p></div></div>',
+    '<div class="flex items-center justify-between border-b-2 border-slate-800 pb-4 mb-4 pt-2"><!-- Lado Esquerdo: Logo oficial (mantida no tamanho ampliado) --><div><img src="assets/img/logo-codeba.png" alt="CODEBA Autoridade Portuária" style="height: 65px !important; width: auto !important; max-height: none !important;" class="object-contain"></div><!-- Lado Direito: Título do Documento e Número da OS --><div class="text-right"><h1 class="text-xl font-extrabold text-slate-900 tracking-wide uppercase leading-tight">Ordem de Saída de Carga</h1><p class="text-lg font-bold text-blue-900 mt-0.5">Nº '+x(d.numCarga)+'</p><p class="text-xs text-slate-500">Emitido em: '+x(dataEmissaoCab)+'</p></div></div>',
     '<div class="pdiv"></div>',
 
     '<div class="psec">Identificacao</div>',
