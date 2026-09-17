@@ -288,13 +288,8 @@
   #portaria-tbody tr td:last-child, #concluidas-tbody tr td:last-child,
   #rel-tbody tr td:last-child, #rel-mercs-tbody tr td:last-child,
   #users-tbody tr td:last-child, #audit-tbody tr td:last-child { border-bottom:0; }
-  /* Esconde a thead correspondente quando o tbody virou card */
-  table:has(> tbody#portaria-tbody) thead,
-  table:has(> tbody#concluidas-tbody) thead,
-  table:has(> tbody#rel-tbody) thead,
-  table:has(> tbody#rel-mercs-tbody) thead,
-  table:has(> tbody#users-tbody) thead,
-  table:has(> tbody#audit-tbody) thead { display:none; }
+  /* Esconde a thead das tabelas que viraram cards (classe .tbl-cards no <table>) */
+  .tbl-cards thead { display:none; }
   /* Rótulos das colunas (ordem = ordem das <td> geradas no app.js) */
   #portaria-tbody tr td:nth-child(1)::before { content:'Nº OS'; }
   #portaria-tbody tr td:nth-child(2)::before { content:'Consignatário'; }
@@ -342,7 +337,6 @@
   }
 
   /* Tabela de itens (emit) → card de preenchimento */
-  table:has(> tbody#items-tbody) thead { display:none; }
   #items-tbody { display:block; }
   #items-tbody tr.item-row {
     display:grid; grid-template-columns:1fr 1fr; gap:.5rem;
