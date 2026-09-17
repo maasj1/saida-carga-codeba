@@ -70,6 +70,25 @@ ALTER TABLE public.usuarios DROP COLUMN IF EXISTS senha;
 ALTER TABLE public.usuarios
   ADD COLUMN IF NOT EXISTS auth_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE;
 
+-- ── 2b. NORMALIZA TIPOS LEGADOS ────────────────────────────────────
+-- Se alguma coluna foi criada como varchar(N) no banco antigo (ex.: perfil
+-- como varchar(20), que não cabe 'Emissor (Fiel/Tecnico)' = 22 letras e
+-- quebrava o seed com ERROR 22001), converte para TEXT automaticamente.
+DO $$
+DECLARE r RECORD;
+BEGIN
+  FOR r IN
+    SELECT table_name, column_name
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name IN ('usuarios', 'ordens', 'auditoria')
+      AND data_type = 'character varying'
+  LOOP
+    EXECUTE format('ALTER TABLE public.%I ALTER COLUMN %I TYPE TEXT',
+      r.table_name, r.column_name);
+  END LOOP;
+END $$;
+
 -- ── 3. USUÁRIOS PADRÃO (só insere se o login ainda não existir) ─────
 INSERT INTO public.usuarios (nome, login, perfil) VALUES
   ('Administrador',   'admin',    'Administrador'),
