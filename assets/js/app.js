@@ -1064,6 +1064,10 @@ async function saveOrder() {
   g('items-tbody').innerHTML = ''; S.rowId = 0;
   document.querySelectorAll('#pane-emit input:not([readonly]):not([disabled]),#pane-emit select:not([disabled]),#pane-emit textarea:not([readonly]):not([disabled])')
     .forEach(function(el){ el.value=''; });
+  // O número usado foi consumido: zera o campo (readonly, não coberto pelo
+  // seletor acima) para pré-reservar o PRÓXIMO número. Sem isto, o número
+  // trava e o save seguinte dá conflito de UNIQUE no banco.
+  g('f-num-carga').value = '';
   checkEmpty(); calcTotals(); setToday(); setCidadeDefault(); preReservarNumeroOS(); refreshCarroSelect();
   aplicarIdentidadeUsuario();
   setTipoCarga('mercadoria');
