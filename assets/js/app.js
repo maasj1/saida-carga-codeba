@@ -495,6 +495,15 @@ function switchTab(t) {
     document.getElementById('tab-'+id).classList.toggle('active', id === t);
     document.getElementById('tab-'+id).classList.toggle('text-white', id === t);
   });
+  // Fecha o menu mobile ao trocar de aba (só em telas < lg)
+  try {
+    if (window.innerWidth < 1024) {
+      var nav = document.getElementById('main-nav');
+      if (nav && !nav.classList.contains('hidden')) closeMobileMenu();
+    }
+    // Rola para o topo ao trocar de aba no celular
+    if (window.innerWidth < 768) window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch(e){}
   // Reanima o painel exibido (reflow reinicia a animação a cada troca)
   var pane = document.getElementById('pane-'+t);
   if (pane) {
@@ -506,6 +515,52 @@ function switchTab(t) {
   if (t === 'relatorio') iniciarFiltrosRelatorio();
   if (t === 'emit') preReservarNumeroOS(); // formulário em branco já mostra o número
 }
+
+// ─── MENU MOBILE (hamburger < lg) ─────────────────────────────────────────
+function toggleMobileMenu() {
+  var nav = document.getElementById('main-nav');
+  var btn = document.getElementById('mobile-menu-btn');
+  var iOpen = document.getElementById('mobile-menu-icon-open');
+  var iClose = document.getElementById('mobile-menu-icon-close');
+  if (!nav) return;
+  var opening = nav.classList.contains('hidden');
+  nav.classList.toggle('hidden', !opening);
+  nav.classList.toggle('flex', opening);
+  if (btn) btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
+  if (iOpen) iOpen.classList.toggle('hidden', opening);
+  if (iClose) iClose.classList.toggle('hidden', !opening);
+}
+
+function closeMobileMenu() {
+  var nav = document.getElementById('main-nav');
+  var btn = document.getElementById('mobile-menu-btn');
+  var iOpen = document.getElementById('mobile-menu-icon-open');
+  var iClose = document.getElementById('mobile-menu-icon-close');
+  if (!nav) return;
+  // No desktop o nav é sempre visível (lg:flex); só esconde no mobile
+  if (window.innerWidth < 1024) {
+    nav.classList.add('hidden');
+    nav.classList.remove('flex');
+  }
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+  if (iOpen) iOpen.classList.remove('hidden');
+  if (iClose) iClose.classList.add('hidden');
+}
+
+// Garante estado correto ao redimensionar (ex.: girar o celular)
+window.addEventListener('resize', function() {
+  var nav = document.getElementById('main-nav');
+  if (!nav) return;
+  if (window.innerWidth >= 1024) {
+    nav.classList.remove('hidden');
+  } else if (btnMenuFechado()) {
+    nav.classList.add('hidden');
+  }
+  function btnMenuFechado() {
+    var btn = document.getElementById('mobile-menu-btn');
+    return btn && btn.getAttribute('aria-expanded') !== 'true';
+  }
+});
 
 // ─── NUMERAÇÃO DA OS (sequence única no banco) ───────────────────────────────
 // O número é reservado no banco no momento de salvar/imprimir — nunca antes.

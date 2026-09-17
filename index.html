@@ -77,7 +77,7 @@
           <p class="text-blue-200 text-sm">Sistema de Ordem de Saida Digital</p>
         </div>
       </div>
-      <div class="p-8 space-y-6">
+      <div class="p-5 sm:p-8 space-y-6">
         <div>
           <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Usuario</label>
           <div class="relative">
@@ -117,47 +117,52 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
 
   <!-- HEADER -->
   <header class="bg-navy-800 shadow-lg sticky top-0 z-40 border-b border-navy-600">
-    <div class="max-w-7xl mx-auto px-4 flex flex-wrap lg:flex-nowrap items-center justify-between gap-4 py-2">
+    <div class="max-w-7xl mx-auto px-3 sm:px-4 flex flex-wrap lg:flex-nowrap items-center justify-between gap-2 sm:gap-4 py-2">
       
-      <!-- Esquerda: Logo -->
-      <div class="flex items-center gap-3 py-1">
-        <img src="assets/img/logo-codeba.png" alt="CODEBA Autoridade Portuária" class="h-9 w-auto object-contain filter brightness-0 invert opacity-90 hover:opacity-100 transition-opacity">
-        <span class="text-xs text-slate-300 font-medium border-l border-slate-700 pl-3">Porto de Ilhéus</span>
+      <!-- Esquerda: Logo + hamburger (mobile) -->
+      <div class="flex items-center gap-2 sm:gap-3 py-1 flex-1 lg:flex-none min-w-0">
+        <button id="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Abrir menu" aria-expanded="false"
+          class="lg:hidden p-2 -ml-1 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition flex-shrink-0">
+          <svg id="mobile-menu-icon-open" class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          <svg id="mobile-menu-icon-close" class="w-6 h-6 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+        <img src="assets/img/logo-codeba.png" alt="CODEBA Autoridade Portuária" class="h-8 sm:h-9 w-auto object-contain filter brightness-0 invert opacity-90 hover:opacity-100 transition-opacity flex-shrink-0">
+        <span class="hidden min-[400px]:inline text-xs text-slate-300 font-medium border-l border-slate-700 pl-3 truncate">Porto de Ilhéus</span>
       </div>
 
-      <nav class="flex items-center overflow-x-auto gap-1 flex-1 lg:justify-center hide-scrollbar">
-        <button id="tab-emit" onclick="switchTab('emit')" class="tab-btn active px-3 py-2 text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg">
+      <nav id="main-nav" class="hidden lg:flex items-center gap-1 flex-1 lg:justify-center basis-full lg:basis-auto order-3 lg:order-none flex-col lg:flex-row items-stretch lg:items-center overflow-y-auto lg:overflow-x-auto lg:overflow-y-visible max-h-[70vh] lg:max-h-none pb-2 lg:pb-0 hide-scrollbar">
+        <button id="tab-emit" onclick="switchTab('emit')" class="tab-btn active px-4 lg:px-3 py-3 lg:py-2 text-sm lg:text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg text-left">
           <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           Emitir Ordem
         </button>
-        <button id="tab-portaria" onclick="switchTab('portaria')" class="tab-btn px-3 py-2 text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg">
+        <button id="tab-portaria" onclick="switchTab('portaria')" class="tab-btn px-4 lg:px-3 py-3 lg:py-2 text-sm lg:text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg text-left">
           <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
           Portaria <span id="portaria-badge" class="hidden bg-amber-400 text-navy-800 text-[9px] font-bold px-1.5 rounded-full badge-live">0</span>
         </button>
-        <button id="tab-manage" onclick="switchTab('manage')" class="tab-btn px-3 py-2 text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg">
+        <button id="tab-manage" onclick="switchTab('manage')" class="tab-btn px-4 lg:px-3 py-3 lg:py-2 text-sm lg:text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg text-left">
           <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
           Cadastros
         </button>
-        <button id="tab-relatorio" onclick="switchTab('relatorio')" class="tab-btn px-3 py-2 text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg">
+        <button id="tab-relatorio" onclick="switchTab('relatorio')" class="tab-btn px-4 lg:px-3 py-3 lg:py-2 text-sm lg:text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg text-left">
           <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
           Relatorios
         </button>
-        <button id="tab-users" onclick="switchTab('users')" class="tab-btn px-3 py-2 text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg">
+        <button id="tab-users" onclick="switchTab('users')" class="tab-btn px-4 lg:px-3 py-3 lg:py-2 text-sm lg:text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg text-left">
           <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
           Usuarios
         </button>
-        <button id="tab-audit" onclick="switchTab('audit')" class="tab-btn px-3 py-2 text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg">
+        <button id="tab-audit" onclick="switchTab('audit')" class="tab-btn px-4 lg:px-3 py-3 lg:py-2 text-sm lg:text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg text-left">
           <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           Auditoria
         </button>
-        <button id="tab-sobre" onclick="switchTab('sobre')" class="tab-btn px-3 py-2 text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg">
+        <button id="tab-sobre" onclick="switchTab('sobre')" class="tab-btn px-4 lg:px-3 py-3 lg:py-2 text-sm lg:text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg text-left">
           <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           Ajuda
         </button>
       </nav>
 
       <!-- Direita: Badges e User -->
-      <div class="flex items-center gap-2 flex-shrink-0">
+      <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
         <!-- Badges -->
         <div class="hidden xl:flex items-center gap-2 mr-2">
           <div class="flex items-center gap-1.5 bg-amber-400/20 border border-amber-400/30 rounded-lg px-2 py-1">
@@ -171,17 +176,17 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
         </div>
 
         <!-- User -->
-        <div class="flex items-center gap-3 mr-2">
+        <div class="flex items-center gap-2 sm:gap-3 sm:mr-2">
           <!-- Avatar com a Inicial do Perfil -->
-          <div id="user-avatar" class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow">F</div>
+          <div id="user-avatar" class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow flex-shrink-0">F</div>
           
           <!-- Nome do Perfil e Cargo -->
-          <div class="flex flex-col text-left">
+          <div class="hidden min-[500px]:flex flex-col text-left">
             <span id="user-display-name" class="text-xs font-bold text-white leading-tight">Fiel de Armazém</span>
             <span id="user-display-role" class="text-[10px] text-slate-300">(Emissor (Fiel/Técnico))</span>
           </div>
         </div>
-        <div class="w-px h-4 bg-white/20 mx-1"></div>
+        <div class="hidden min-[500px]:block w-px h-4 bg-white/20 mx-1"></div>
         <!-- Alternar tema claro/escuro -->
         <button id="theme-toggle" onclick="alternarTema()" class="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition" title="Mudar para tema escuro">
           <span data-theme-icon="moon">
@@ -191,7 +196,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
             <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l-1.41 1.41"/></svg>
           </span>
         </button>
-        <div class="w-px h-4 bg-white/20 mx-1"></div>
+        <div class="hidden sm:block w-px h-4 bg-white/20 mx-1"></div>
         <!-- Logout Button -->
         <button onclick="logoutUser()" class="text-xs text-red-300 hover:text-red-100 font-medium transition flex items-center gap-1" title="Sair do sistema">
           <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
@@ -203,10 +208,10 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
   </header>
 
   <!-- TAB EMITIR -->
-  <main id="pane-emit" class="max-w-screen-xl mx-auto px-4 py-6 space-y-5">
+  <main id="pane-emit" class="max-w-screen-xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-5">
 
     <section class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-      <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-3 flex items-center justify-between">
+      <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-2">
         <h2 class="text-white font-bold text-sm flex items-center gap-2">
           <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 014-4z"/>
@@ -217,7 +222,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
           Campos com <strong class="text-amber-300">*</strong> sao obrigatorios
         </span>
       </div>
-      <div class="p-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="p-4 sm:p-6 grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <div>
           <label class="label-style">N Carga Saida</label>
           <input id="f-num-carga" type="text" readonly
@@ -246,7 +251,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
     </section>
 
     <section class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-      <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-3">
+      <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-4 sm:px-6 py-3">
         <h2 class="text-white font-bold text-sm flex items-center gap-2">
           <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
@@ -254,7 +259,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
           Dados da Carga
         </h2>
       </div>
-      <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
 
         <div>
           <label class="label-style">Consignatario <span class="req">*</span></label>
@@ -317,7 +322,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
     </section>
 
     <section class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-      <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
         <h2 class="text-white font-bold text-sm flex items-center gap-2">
           <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
@@ -379,7 +384,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
             Container (se aplicavel)
           </h2>
         </div>
-        <div class="p-5 space-y-3">
+        <div class="p-4 sm:p-5 space-y-3">
           <div>
             <label class="label-style">Sigla / Numero</label>
             <input id="f-container-num" type="text" placeholder="Ex: MSCU1234567" tabindex="20"
@@ -408,7 +413,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
             Observacoes e Validacao
           </h2>
         </div>
-        <div class="p-5 space-y-4">
+        <div class="p-4 sm:p-5 space-y-4">
           <div>
             <label class="label-style">Observacoes</label>
             <textarea id="f-obs" rows="3" tabindex="23" placeholder="Observacoes relevantes para a ordem de saida..."
@@ -422,9 +427,9 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
       </section>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 px-6 py-4">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-4 text-xs text-gray-400">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 px-4 sm:px-6 py-4">
+      <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3">
+        <div class="hidden md:flex items-center gap-4 text-xs text-gray-400">
           <span class="flex items-center gap-1.5">
             <svg class="w-4 h-4 text-navy-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -433,29 +438,29 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
             &nbsp;Imprimir: <kbd class="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs font-mono">F10</kbd>
           </span>
         </div>
-        <div class="flex flex-wrap gap-3">
+        <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2.5 sm:gap-3 w-full sm:w-auto">
           <button onclick="clearForm()"
-            class="px-4 py-2.5 rounded-xl border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-50 transition flex items-center gap-2">
+            class="w-full sm:w-auto px-4 py-3 sm:py-2.5 rounded-xl border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-50 transition flex items-center justify-center gap-2">
             <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
             </svg>
             Limpar Formulario
           </button>
           <button onclick="saveOrder()"
-            class="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition shadow-sm">
+            class="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition shadow-sm">
             <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
             </svg>
             Salvar Ordem
-            <kbd class="px-1.5 py-0.5 bg-white/20 rounded text-xs font-mono">F9</kbd>
+            <kbd class="hidden sm:inline px-1.5 py-0.5 bg-white/20 rounded text-xs font-mono">F9</kbd>
           </button>
           <button onclick="printOrder()"
-            class="flex items-center gap-2 px-5 py-2.5 bg-navy-600 hover:bg-navy-700 text-white text-sm font-bold rounded-xl transition shadow-sm">
+            class="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 bg-navy-600 hover:bg-navy-700 text-white text-sm font-bold rounded-xl transition shadow-sm">
             <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
             </svg>
             Imprimir Ordem
-            <kbd class="px-1.5 py-0.5 bg-white/20 rounded text-xs font-mono">F10</kbd>
+            <kbd class="hidden sm:inline px-1.5 py-0.5 bg-white/20 rounded text-xs font-mono">F10</kbd>
           </button>
         </div>
       </div>
@@ -463,25 +468,25 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
   </main>
 
   <!-- TAB PORTARIA -->
-  <main id="pane-portaria" class="hidden max-w-screen-xl mx-auto px-4 py-6 space-y-5">
+  <main id="pane-portaria" class="hidden max-w-screen-xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-5">
     <section class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-      <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-3 flex items-center justify-between">
+      <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:justify-between">
         <h2 class="text-white font-bold text-sm flex items-center gap-2">
-          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg class="w-4 h-4 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
           </svg>
           Ordens Aguardando Portaria
         </h2>
-        <div class="flex items-center gap-3">
-          <div class="relative">
+        <div class="flex items-center gap-2 sm:gap-3">
+          <div class="relative flex-1 sm:flex-none">
             <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/50" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
             <input id="portaria-search" type="text" placeholder="Buscar por OS ou Placa..."
               oninput="renderPortaria()"
-              class="pl-9 pr-3 py-1.5 text-sm bg-white/15 border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:bg-white/20 w-56" />
+              class="w-full sm:w-56 pl-9 pr-3 py-2 sm:py-1.5 text-base sm:text-sm bg-white/15 border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:bg-white/20" />
           </div>
-          <button onclick="renderPortaria()" class="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 border border-white/30 transition" title="Atualizar">
+          <button onclick="renderPortaria()" class="p-2 sm:p-1.5 rounded-lg bg-white/15 hover:bg-white/25 border border-white/30 transition flex-shrink-0" title="Atualizar">
             <svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg>
@@ -545,7 +550,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
   </main>
 
   <!-- TAB GERENCIAR -->
-  <main id="pane-manage" class="hidden max-w-screen-xl mx-auto px-4 py-6">
+  <main id="pane-manage" class="hidden max-w-screen-xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
       <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -558,7 +563,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
           </h3>
           <span id="count-navios" class="bg-white/20 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold">0</span>
         </div>
-        <div class="p-5">
+        <div class="p-4 sm:p-5">
           <div class="flex gap-2 mb-4">
             <input id="input-navio" type="text" placeholder="Nome do navio..."
               class="input-style flex-1" onkeydown="if(event.key==='Enter') addCadastro('navio')" />
@@ -579,7 +584,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
           </h3>
           <span id="count-consig" class="bg-white/20 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold">0</span>
         </div>
-        <div class="p-5">
+        <div class="p-4 sm:p-5">
           <div class="flex gap-2 mb-4">
             <input id="input-consig" type="text" placeholder="Nome do consignatario..."
               class="input-style flex-1" onkeydown="if(event.key==='Enter') addCadastro('consignatario')" />
@@ -600,8 +605,8 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
           </h3>
           <span id="count-mercs" class="bg-white/20 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold">0</span>
         </div>
-        <div class="p-5">
-          <div class="grid grid-cols-2 gap-2 mb-2">
+        <div class="p-4 sm:p-5">
+          <div class="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2 mb-2">
             <input id="input-merc-nome" type="text" placeholder="Nome da mercadoria"
               class="input-style" onkeydown="if(event.key==='Enter') addCadastro('mercadoria')" />
             <input id="input-merc-codigo" type="text" placeholder="Codigo (opcional)"
@@ -625,7 +630,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
           </h3>
           <span id="count-lotes" class="bg-white/20 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold">0</span>
         </div>
-        <div class="p-5">
+        <div class="p-4 sm:p-5">
           <div class="flex gap-2 mb-4">
             <input id="input-lote" type="text" placeholder="Numero / descricao do lote..."
               class="input-style flex-1" onkeydown="if(event.key==='Enter') addCadastro('lote')" />
@@ -647,7 +652,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
           </h3>
           <span id="count-veiculos" class="bg-white/20 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold">0</span>
         </div>
-        <div class="p-5">
+        <div class="p-4 sm:p-5">
           <p class="text-xs text-gray-500 mb-3">Cadastre aqui os tipos de veiculo que aparecerao no formulario de emissao de ordem.</p>
           <div class="flex gap-2 mb-4">
             <input id="input-veiculo" type="text" placeholder="Ex: Caminhao Bau, Carreta, Bitrem..."
@@ -655,7 +660,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
             <button onclick="addCadastro('veiculo')"
               class="px-4 py-2 bg-navy-600 hover:bg-navy-700 text-white text-sm font-semibold rounded-xl transition">Adicionar</button>
           </div>
-          <ul id="list-ui-veiculos" class="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-52 overflow-y-auto"></ul>
+          <ul id="list-ui-veiculos" class="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-4 gap-2 max-h-52 overflow-y-auto"></ul>
         </div>
       </div>
 
@@ -663,7 +668,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
   </main>
 
   <!-- TAB RELATORIOS -->
-  <main id="pane-relatorio" class="hidden max-w-screen-xl mx-auto px-4 py-6 space-y-5">
+  <main id="pane-relatorio" class="hidden max-w-screen-xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-5">
 
     <!-- Filtros -->
     <section class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -674,7 +679,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
         </h2>
         <button onclick="limparFiltros()" class="text-xs text-blue-200 hover:text-white transition font-medium">Limpar filtros</button>
       </div>
-      <div class="p-6">
+      <div class="p-4 sm:p-6">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 
           <!-- Filtro: Consignatario (multi-select) -->
@@ -816,7 +821,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
   </main>
 
   <!-- TAB AJUDA (tutorial para o usuário) -->
-  <main id="pane-sobre" class="hidden max-w-screen-xl mx-auto px-4 py-6">
+  <main id="pane-sobre" class="hidden max-w-screen-xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
       <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-4 flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
@@ -829,7 +834,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
           <p class="text-blue-200 text-xs mt-0.5">Aprenda a usar o sistema passo a passo, sem complicação</p>
         </div>
       </div>
-      <div class="p-8 max-w-4xl mx-auto space-y-10">
+      <div class="p-4 sm:p-8 max-w-4xl mx-auto space-y-8 sm:space-y-10">
 
         <!-- O que é este sistema -->
         <section class="space-y-4">
@@ -1061,7 +1066,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
   </main>
 
   <!-- TAB GERENCIAR USUARIOS (APENAS ADMIN) -->
-  <main id="pane-users" class="hidden max-w-screen-xl mx-auto px-4 py-6 space-y-6">
+  <main id="pane-users" class="hidden max-w-screen-xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-6">
     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
       <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-4 flex items-center justify-between">
         <h2 class="text-white font-bold text-sm flex items-center gap-2">
@@ -1075,7 +1080,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
       
       <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-100">
         <!-- Add User Form -->
-        <div class="p-6 md:col-span-1 bg-slate-50">
+        <div class="p-4 sm:p-6 md:col-span-1 bg-slate-50">
           <h3 class="text-sm font-bold text-navy-700 mb-4">Novo Usuario</h3>
           <div class="space-y-4">
             <div>
@@ -1123,7 +1128,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
   </main>
 
   <!-- TAB AUDITORIA (APENAS ADMIN) -->
-  <main id="pane-audit" class="hidden max-w-screen-xl mx-auto px-4 py-6 space-y-5">
+  <main id="pane-audit" class="hidden max-w-screen-xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-5">
     <section class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
       <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-3 flex items-center justify-between">
         <h2 class="text-white font-bold text-sm flex items-center gap-2">
@@ -1136,7 +1141,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
           </svg>
         </button>
       </div>
-      <div class="p-6">
+      <div class="p-4 sm:p-6">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
           <div class="space-y-1">
             <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide">De</label>
@@ -1222,7 +1227,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
         </svg>
       </button>
     </div>
-    <div class="p-6 space-y-4">
+    <div class="p-4 sm:p-6 space-y-4">
       <p id="quick-modal-hint" class="text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2"></p>
       <input id="quick-input" type="text" placeholder="Nome..."
         class="input-style w-full" onkeydown="if(event.key==='Enter') saveQuick()" />
@@ -1252,7 +1257,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
         </svg>
       </button>
     </div>
-    <div class="p-6 space-y-4">
+    <div class="p-4 sm:p-6 space-y-4">
       <div id="portaria-modal-info" class="text-sm text-gray-600 bg-slate-50 rounded-xl p-4 border border-gray-200"></div>
       <div>
         <label class="label-style">Nome do Agente de Portaria <span class="req">*</span> <span class="text-gray-400 font-normal">(automático)</span></label>
@@ -1310,7 +1315,7 @@ text-sm font-bold rounded-xl transition shadow-md flex justify-center items-cent
 </div>
 
 <!-- TOASTS -->
-<div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 items-end pointer-events-none"></div>
+<div id="toast-container" class="fixed bottom-4 inset-x-4 sm:inset-x-auto sm:bottom-5 sm:right-5 z-50 flex flex-col gap-2 items-stretch sm:items-end pointer-events-none"></div>
 
 <!-- PRINT DOCUMENT -->
 <div id="print-document"></div>

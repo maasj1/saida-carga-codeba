@@ -248,3 +248,139 @@
 /* Antes injetado via JS no carregamento; agora estático */
 .cell-input{border:1px solid #e2e8f0;border-radius:.5rem;padding:.3rem .5rem;font-size:.8rem;}
 .cell-input:focus{border-color:#1a3a6e;box-shadow:0 0 0 2px rgba(26,58,110,.12);outline:none;}
+
+/* ── RESPONSIVO MOBILE (Fase B) ───────────────────────────────────
+   Estratégia: sem mudar o HTML/JS, só CSS.
+   - Scroll horizontal suave com momentum no iOS
+   - Tabelas de listagem viram cards (portaria, concluídas, relatório, auditoria, usuários)
+   - Tabela de itens vira cards de preenchimento
+   - Inputs com 16px no mobile (evita zoom automático do iOS) + altura mínima 44px
+   - hide-scrollbar utilitário */
+.hide-scrollbar{scrollbar-width:none;-ms-overflow-style:none;}
+.hide-scrollbar::-webkit-scrollbar{display:none;}
+.table-scroll{-webkit-overflow-scrolling:touch;}
+.overflow-x-auto{-webkit-overflow-scrolling:touch;}
+
+@media (max-width: 767px) {
+  /* Evita zoom do iOS e garante alvo de toque */
+  .input-style, input, select, textarea { font-size:16px !important; min-height:44px; }
+  .cell-input { font-size:16px !important; min-height:40px; padding:.5rem .6rem; width:100% !important; }
+  .quick-add-btn { width:44px; height:44px; }
+  select.input-style {
+    background-position:right .6rem center;
+  }
+
+  /* Tabelas de listagem → cards. Cobre: portaria, concluídas, relatório,
+     mercadorias consolidadas, usuários, auditoria. */
+  #portaria-tbody, #concluidas-tbody, #rel-tbody, #rel-mercs-tbody,
+  #users-tbody, #audit-tbody { display:block; }
+  #portaria-tbody tr, #concluidas-tbody tr, #rel-tbody tr, #rel-mercs-tbody tr,
+  #users-tbody tr, #audit-tbody tr {
+    display:block; background:#fff; border:1px solid #e5e7eb; border-radius:.9rem;
+    margin:.6rem .75rem; padding:.35rem .9rem; box-shadow:0 1px 2px rgba(15,23,42,.05);
+  }
+  #portaria-tbody tr td, #concluidas-tbody tr td, #rel-tbody tr td,
+  #rel-mercs-tbody tr td, #users-tbody tr td, #audit-tbody tr td {
+    display:flex; align-items:center; justify-content:space-between; gap:.75rem;
+    padding:.5rem 0; border:0; border-bottom:1px dashed #eef2f7;
+    font-size:.85rem; text-align:right;
+  }
+  #portaria-tbody tr td:last-child, #concluidas-tbody tr td:last-child,
+  #rel-tbody tr td:last-child, #rel-mercs-tbody tr td:last-child,
+  #users-tbody tr td:last-child, #audit-tbody tr td:last-child { border-bottom:0; }
+  /* Esconde a thead correspondente quando o tbody virou card */
+  table:has(> tbody#portaria-tbody) thead,
+  table:has(> tbody#concluidas-tbody) thead,
+  table:has(> tbody#rel-tbody) thead,
+  table:has(> tbody#rel-mercs-tbody) thead,
+  table:has(> tbody#users-tbody) thead,
+  table:has(> tbody#audit-tbody) thead { display:none; }
+  /* Rótulos das colunas (ordem = ordem das <td> geradas no app.js) */
+  #portaria-tbody tr td:nth-child(1)::before { content:'Nº OS'; }
+  #portaria-tbody tr td:nth-child(2)::before { content:'Consignatário'; }
+  #portaria-tbody tr td:nth-child(3)::before { content:'Placa'; }
+  #portaria-tbody tr td:nth-child(4)::before { content:'Motorista'; }
+  #portaria-tbody tr td:nth-child(5)::before { content:'Veículo'; }
+  #portaria-tbody tr td:nth-child(6)::before { content:'Emitido em'; }
+  #portaria-tbody tr td:nth-child(7)::before { content:'Status'; }
+  #portaria-tbody tr td:nth-child(8)::before { content:'Ação'; }
+  #portaria-tbody tr td:nth-child(9)::before { content:'Excluir'; }
+  #concluidas-tbody tr td:nth-child(1)::before { content:'Nº OS'; }
+  #concluidas-tbody tr td:nth-child(2)::before { content:'Consignatário'; }
+  #concluidas-tbody tr td:nth-child(3)::before { content:'Placa'; }
+  #concluidas-tbody tr td:nth-child(4)::before { content:'Agente'; }
+  #concluidas-tbody tr td:nth-child(5)::before { content:'Liberado em'; }
+  #concluidas-tbody tr td:nth-child(6)::before { content:'Excluir'; }
+  #rel-tbody tr td:nth-child(1)::before { content:'Nº OS'; }
+  #rel-tbody tr td:nth-child(2)::before { content:'Data descarga'; }
+  #rel-tbody tr td:nth-child(3)::before { content:'Consignatário'; }
+  #rel-tbody tr td:nth-child(4)::before { content:'Placa'; }
+  #rel-tbody tr td:nth-child(5)::before { content:'Motorista'; }
+  #rel-tbody tr td:nth-child(6)::before { content:'Status'; }
+  #rel-tbody tr td:nth-child(7)::before { content:'Qtd.'; }
+  #rel-tbody tr td:nth-child(8)::before { content:'Peso (kg)'; }
+  #rel-tbody tr td:nth-child(9)::before { content:'Valor (R$)'; }
+  #rel-mercs-tbody tr td:nth-child(1)::before { content:'Mercadoria'; }
+  #rel-mercs-tbody tr td:nth-child(2)::before { content:'Qtd.'; }
+  #rel-mercs-tbody tr td:nth-child(3)::before { content:'Peso (kg)'; }
+  #rel-mercs-tbody tr td:nth-child(4)::before { content:'Valor (R$)'; }
+  #users-tbody tr td:nth-child(1)::before { content:'Nome'; }
+  #users-tbody tr td:nth-child(2)::before { content:'Login'; }
+  #users-tbody tr td:nth-child(3)::before { content:'Perfil'; }
+  #users-tbody tr td:nth-child(4)::before { content:'Ação'; }
+  #audit-tbody tr td:nth-child(1)::before { content:'Data/Hora'; }
+  #audit-tbody tr td:nth-child(2)::before { content:'Usuário'; }
+  #audit-tbody tr td:nth-child(3)::before { content:'Perfil'; }
+  #audit-tbody tr td:nth-child(4)::before { content:'Ação'; }
+  #audit-tbody tr td:nth-child(5)::before { content:'OS / Alvo'; }
+  #audit-tbody tr td:nth-child(6)::before { content:'Detalhes'; }
+  #portaria-tbody tr td::before, #concluidas-tbody tr td::before,
+  #rel-tbody tr td::before, #rel-mercs-tbody tr td::before,
+  #users-tbody tr td::before, #audit-tbody tr td::before {
+    content:''; font-size:.68rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:.04em; color:#6b7280; flex-shrink:0; text-align:left;
+  }
+
+  /* Tabela de itens (emit) → card de preenchimento */
+  table:has(> tbody#items-tbody) thead { display:none; }
+  #items-tbody { display:block; }
+  #items-tbody tr.item-row {
+    display:grid; grid-template-columns:1fr 1fr; gap:.5rem;
+    border:1px solid #e5e7eb; border-radius:.9rem; margin:.6rem .75rem; padding:.75rem;
+    background:#fff;
+  }
+  #items-tbody tr.item-row td { display:block; padding:0; border:0; }
+  #items-tbody tr.item-row td:nth-child(1) { grid-column:1 / -1; }
+  #items-tbody tr.item-row td:nth-child(2) { grid-column:1 / -1; }
+  #items-tbody tr.item-row td:nth-child(8) { grid-column:1 / -1; display:flex; justify-content:flex-end; }
+  #items-tbody tr.item-row td:nth-child(1)::before { content:'Mercadoria / Material'; display:block; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#6b7280; margin-bottom:.2rem; }
+  #items-tbody tr.item-row td:nth-child(2)::before { content:'Código'; display:block; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#6b7280; margin-bottom:.2rem; }
+  #items-tbody tr.item-row td:nth-child(3)::before { content:'Embalagem'; display:block; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#6b7280; margin-bottom:.2rem; }
+  #items-tbody tr.item-row td:nth-child(4)::before { content:'Qtd.'; display:block; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#6b7280; margin-bottom:.2rem; }
+  #items-tbody tr.item-row td:nth-child(5)::before { content:'Peso unit. (kg)'; display:block; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#6b7280; margin-bottom:.2rem; }
+  #items-tbody tr.item-row td:nth-child(6)::before { content:'Peso total (kg)'; display:block; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#6b7280; margin-bottom:.2rem; }
+  #items-tbody tr.item-row td:nth-child(7)::before { content:'Valor (R$)'; display:block; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#6b7280; margin-bottom:.2rem; }
+
+  /* Totais dos itens: empilha no mobile */
+  #pane-emit .px-5.py-3.bg-slate-50 { flex-direction:column; align-items:stretch !important; gap:.25rem; }
+
+  /* Modais e toasts ocupam bem a tela pequena */
+  #quick-modal > div, #portaria-modal > div { margin:0 .25rem; max-height:92vh; overflow-y:auto; }
+  #history-modal > div { margin:0 .25rem; max-height:88vh; }
+  .toast { width:100%; }
+}
+
+/* Dark mode acompanha os cards mobile */
+@media (max-width: 767px) {
+  html.dark #portaria-tbody tr, html.dark #concluidas-tbody tr,
+  html.dark #rel-tbody tr, html.dark #rel-mercs-tbody tr,
+  html.dark #users-tbody tr, html.dark #audit-tbody tr,
+  html.dark #items-tbody tr.item-row {
+    background-color:#101d33 !important; border-color:#24344d !important;
+  }
+  html.dark #portaria-tbody tr td, html.dark #concluidas-tbody tr td,
+  html.dark #rel-tbody tr td, html.dark #rel-mercs-tbody tr td,
+  html.dark #users-tbody tr td, html.dark #audit-tbody tr td {
+    border-color:#24344d !important;
+  }
+}
