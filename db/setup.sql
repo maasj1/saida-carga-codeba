@@ -89,6 +89,22 @@ BEGIN
   END LOOP;
 END $$;
 
+-- ── 2c. COLUNA EXTRA LEGADA `email` ─────────────────────────────────
+-- Bancos antigos criados pelo Table Editor têm `usuarios.email NOT NULL`,
+-- que o app não usa mas quebra o seed (ERROR 23502). Se ela existir:
+-- torna anulável e preenche com o e-mail interno do login.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_schema = 'public' AND table_name = 'usuarios'
+               AND column_name = 'email') THEN
+    ALTER TABLE public.usuarios ALTER COLUMN email DROP NOT NULL;
+    UPDATE public.usuarios
+      SET email = lower(login) || '@codeba.local'
+      WHERE email IS NULL;
+  END IF;
+END $$;
+
 -- ── 3. USUÁRIOS PADRÃO (só insere se o login ainda não existir) ─────
 INSERT INTO public.usuarios (nome, login, perfil) VALUES
   ('Administrador',   'admin',    'Administrador'),
