@@ -89,11 +89,15 @@ BEGIN
   END LOOP;
 END $$;
 
--- ── 2c. COLUNA EXTRA LEGADA `email` ─────────────────────────────────
--- Bancos antigos criados pelo Table Editor têm `usuarios.email NOT NULL`,
--- que o app não usa mas quebra o seed (ERROR 23502). Se ela existir:
--- torna anulável e preenche com o e-mail interno do login.
+-- ── 2c. LEGADOS DA TABELA usuarios ─────────────────────────────────
+-- Bancos antigos criados pelo Table Editor têm extras que o app não usa
+-- mas que quebram o seed:
+--   • coluna `email NOT NULL` (ERROR 23502);
+--   • CHECK em `perfil` com valores incompatíveis (ERROR 23514) — o app usa
+--     'Administrador', 'Emissor (Fiel/Tecnico)' e 'Agente de Portaria', e as
+--     permissões são testadas com ILIKE, sem depender desse CHECK.
 DO $$
+DECLARE r RECORD;
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.columns
              WHERE table_schema = 'public' AND table_name = 'usuarios'
@@ -103,6 +107,15 @@ BEGIN
       SET email = lower(login) || '@codeba.local'
       WHERE email IS NULL;
   END IF;
+
+  FOR r IN
+    SELECT conname FROM pg_constraint
+    WHERE conrelid = 'public.usuarios'::regclass
+      AND contype = 'c'
+      AND pg_get_constraintdef(oid) ILIKE '%perfil%'
+  LOOP
+    EXECUTE format('ALTER TABLE public.usuarios DROP CONSTRAINT %I', r.conname);
+  END LOOP;
 END $$;
 
 -- ── 3. USUÁRIOS PADRÃO (só insere se o login ainda não existir) ─────
@@ -180,3 +193,6 @@ SELECT login, perfil, auth_id IS NOT NULL AS vinculado FROM public.usuarios;
 -- 8b. A coluna tipo_carga tem que aparecer na lista:
 SELECT column_name FROM information_schema.columns
   WHERE table_schema = 'public' AND table_name = 'ordens' AND column_name = 'tipo_carga';
+-- 8c. Constraints restantes em usuarios (para auditar legados):
+SELECT conname, pg_get_constraintdef(oid) AS definicao
+  FROM pg_constraint WHERE conrelid = 'public.usuarios'::regclass;
