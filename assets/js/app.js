@@ -1200,12 +1200,15 @@ function printSecaoAutenticacao(d) {
 }
 
 function renderQrPrint(d) {
-  var qrStr = 'CODEBA|'+d.numCarga+'|'+d.consignatario+'|'+d.placa+'|'+d.responsavel+'|'+d.emitidoEm;
+  // Normaliza para ASCII (remove acentos): elimina a única variável de
+  // conteúdo entre OSs e garante leitura em qualquer scanner.
+  var qrStr = ('CODEBA|'+d.numCarga+'|'+d.consignatario+'|'+d.placa+'|'+d.responsavel+'|'+d.emitidoEm)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   var box = g('print-qr');
   if (!box) return;
   box.innerHTML = '';
   try {
-    if (typeof QRCode === 'undefined') throw new Error('lib qrcodejs nao carregada (CDN)');
+    if (typeof QRCode === 'undefined') throw new Error('lib qrcodejs nao carregada');
     // Gera num nó temporário e congela como imagem data-URL: <img> embutida
     // imprime com fidelidade, sem depender do timing canvas→img da lib nem do
     // elemento estar visível na tela (o documento de impressão é display:none).
@@ -1224,11 +1227,15 @@ function renderQrPrint(d) {
       img.style.width = '64pt';
       img.style.height = '64pt';
       box.appendChild(img);
+    } else if (tmp.firstChild) {
+      box.appendChild(tmp.firstChild); // fallback: usa o original (tabela)
     } else {
-      box.appendChild(tmp); // fallback: usa o original (canvas/tabela)
+      throw new Error('falha ao desenhar o QR');
     }
   } catch(e) {
-    console.error('QR indisponivel:', (e && e.message) || e);
+    var msg = (e && e.message) || String(e);
+    console.error('QR indisponivel:', msg);
+    toast('QR indisponível (' + msg + '). Impresso código textual.', 'warning');
     box.innerHTML = '<span style="font-size:7pt;color:#666;word-break:break-all">' + x(qrStr) + '</span>';
   }
 }
