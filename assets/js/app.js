@@ -287,13 +287,36 @@ function startApp() {
   checkEmpty();
   applyPermissions();
 
+  ativarListenersFormulario();
+}
+
+// Liga uma única vez os listeners do formulário (totais automáticos +
+// atalhos F9/F10/Esc). startApp() é legado e hoje ninguém o chama: o login
+// Auth passa por montarSessao() → restaurarSessao(), por isso a chamada
+// também está lá — sem isto os totais não atualizam ao digitar.
+var _formListenersAtivos = false;
+function ativarListenersFormulario() {
+  if (_formListenersAtivos) return;
+  _formListenersAtivos = true;
+
+  var tb = document.getElementById('items-tbody');
+  if (tb) tb.addEventListener('input', calcTotals);
+
   document.addEventListener('keydown', function(e) {
     if (e.key === 'F9')     { e.preventDefault(); saveOrder(); }
     if (e.key === 'F10')    { e.preventDefault(); printOrder(); }
     if (e.key === 'Escape') { closeQuickModal(); closeHistoryModal(); closePortariaModal(); }
   });
+}
 
-  document.getElementById('items-tbody').addEventListener('input', calcTotals);
+// Resume o erro PostgREST num objeto simples para aparecer legível no console
+// (code/message/details/hint dizem exatamente o motivo do 400/403/409).
+function resumirErroPostgrest(error) {
+  if (!error) return error;
+  return {
+    code: error.code, message: error.message,
+    details: error.details, hint: error.hint
+  };
 }
 
 function loadAll() {
@@ -440,6 +463,11 @@ function restaurarSessao(usuario) {
 
   if (typeof aplicarPermissoesPorPerfil === 'function') {
     aplicarPermissoesPorPerfil(usuario.perfil);
+  }
+
+  // Listeners do formulário (sem isto: totais não recalculam e F9/F10 não funcionam)
+  if (typeof ativarListenersFormulario === 'function') {
+    ativarListenersFormulario();
   }
 
   // Preenche e trava os campos de identidade (emissor, responsável, agente)
@@ -1048,7 +1076,7 @@ async function saveOrder() {
       .from('ordens')
       .insert([orderToDbRow(d)]);
     if (error) {
-      console.error('Erro ao salvar ordem no Supabase:', error);
+      console.error('Erro ao salvar ordem no Supabase:', resumirErroPostgrest(error));
       toast('Salvo localmente. Falha ao sincronizar com banco.', 'warning');
     }
   } catch(err) {
@@ -1380,7 +1408,7 @@ async function confirmarSaidaExec() {
       .update({ status: STATUS.LIBERADO, agente_nome: agente, liberado_em: liberadoEm })
       .eq('num_carga', numCargaTarget);
     if (error) {
-      console.error('Erro ao atualizar ordem no Supabase:', error);
+      console.error('Erro ao atualizar ordem no Supabase:', resumirErroPostgrest(error));
       toast('Status atualizado localmente. Falha ao sincronizar com banco.', 'warning');
     }
   } catch(err) {
@@ -1426,7 +1454,7 @@ async function excluirOrdem(numCarga) {
       .delete()
       .eq('num_carga', numCarga);
     if (error) {
-      console.error('Erro ao excluir ordem no Supabase:', error);
+      console.error('Erro ao excluir ordem no Supabase:', resumirErroPostgrest(error));
       toast('Removido localmente. Falha ao excluir do banco.', 'warning');
     }
   } catch(err) {
