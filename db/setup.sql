@@ -175,8 +175,18 @@ GRANT SELECT, INSERT ON public.auditoria TO authenticated;
 CREATE SEQUENCE IF NOT EXISTS public.os_num_seq;
 
 -- Continua de onde as OSs existentes pararam (lê o maior número atual).
-SELECT setval('public.os_num_seq',
-  coalesce((SELECT max(((regexp_match(num_carga, '-(\d+)$'))[1])::int) FROM public.ordens), 0));
+-- Tabela vazia: próxima OS = ...-00001 (setval com 0 daria ERROR 22003).
+DO $$
+DECLARE v_max INT;
+BEGIN
+  SELECT max(((regexp_match(num_carga, '-(\d+)$'))[1])::int)
+    INTO v_max FROM public.ordens;
+  IF v_max IS NULL THEN
+    PERFORM setval('public.os_num_seq', 1, false);
+  ELSE
+    PERFORM setval('public.os_num_seq', v_max);
+  END IF;
+END $$;
 
 CREATE OR REPLACE FUNCTION public.next_os_num()
 RETURNS INT LANGUAGE SQL AS $$ SELECT nextval('public.os_num_seq')::int; $$;
