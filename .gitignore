@@ -1,0 +1,17 @@
+# Segredos locais (nunca commitar)
+assets/js/config.js
+
+# Backups e rascunhos fora do versionamento
+code.txt
+temp.txt
+database/
+backup_saida_de_carga/
+*.bak
+
+# Sistema
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Dependências futuras (Tailwind CLI, tooling)
+node_modules/

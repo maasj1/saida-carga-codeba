@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CODEBA – Ordem de Saída de Carga Porto</title>
+  <meta name="description" content="Sistema digital de Ordem de Saída de Carga Porto – CODEBA. Gerencie ordens de saída, consignatários, navios e mercadorias." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { inter: ['Inter', 'sans-serif'] },
+          colors: {
+            navy: {
+              50:  '#e8edf5',
+              100: '#c5d0e5',
+              200: '#9fb0d3',
+              300: '#7890c1',
+              400: '#5a77b4',
+              500: '#3b5ea6',
+              600: '#1a3a6e',
+              700: '#142d57',
+              800: '#0e2140',
+              900: '#07122a',
+            }
+          }
+        }
+      }
+    }
+</script>
+  <script>
+    // Tema claro/escuro: aplica antes da renderização para evitar flash.
+    // Prioridade: escolha salva (codeba_theme) > preferência do sistema.
+    (function(){
+      try {
+        var t = localStorage.getItem('codeba_theme');
+        if (!t) {
+          t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+        }
+        if (t === 'dark') document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = t;
+      } catch(e){}
+    })();
+  </script>
+  
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body class="bg-[#f0f4f8] text-gray-800 antialiased min-h-screen selection:bg-navy-200 selection:text-navy-900">
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-[#f0f4f8]">
+  <button onclick="alternarTema()" title="Alternar tema claro/escuro"
+    class="absolute top-4 right-4 p-2 rounded-xl border border-gray-200 bg-white text-gray-500 shadow-sm hover:bg-gray-50 transition">
+    <span data-theme-icon="moon">
+      <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+    </span>
+    <span data-theme-icon="sun" class="hidden">
+      <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l-1.41 1.41"/></svg>
+    </span>
+  </button>
+  <div class="w-full max-w-md p-4">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+      <div class="bg-gradient-to-r from-navy-700 to-navy-600 p-8 text-center relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 20px 20px;"></div>
+        <div class="relative z-10 flex flex-col items-center">
+          <div class="bg-white rounded-2xl px-6 py-3 mb-4 shadow-inner flex items-center justify-center max-w-full">
+            <img src="assets/img/logo-codeba.png" alt="CODEBA – Autoridade Portuária" class="h-12 w-auto max-w-full object-contain" />
+          </div>
+          <h1 class="text-2xl font-bold text-white mb-1">CODEBA</h1>
+          <p class="text-blue-200 text-sm">Sistema de Ordem de Saida Digital</p>
+        </div>
+      </div>
+      <div class="p-8 space-y-6">
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Usuario</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <input id="login-username" type="text" placeholder="Digite seu usuario" class="pl-10 input-style w-full bg-slate-50" onkeydown="if(event.key==='Enter') autenticarUsuario()" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Senha</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <input id="login-password" type="password" placeholder="Digite sua senha" class="pl-10 input-style w-full bg-slate-50" onkeydown="if(event.key==='Enter') autenticarUsuario()" />
+          </div>
+        </div>
+<button onclick="autenticarUsuario()" class="w-full py-3 bg-navy-600 hover:bg-navy-700 text-white
+text-sm font-bold rounded-xl transition shadow-md flex justify-center items-center gap-2 group">
+          Entrar no Sistema
+          <svg class="w-4 h-4 transform group-hover:translate-x-1 transition" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <p class="text-center text-xs text-gray-400 mt-6">Porto de Ilheus - CODEBA &copy; 2026</p>
+  </div>
+</div>
+
+<div id="app-shell" class="hidden min-h-screen bg-[#f0f4f8] flex-col">
+
+  <!-- HEADER -->
+  <header class="bg-navy-800 shadow-lg sticky top-0 z-40 border-b border-navy-600">
+    <div class="max-w-7xl mx-auto px-4 flex flex-wrap lg:flex-nowrap items-center justify-between gap-4 py-2">
+      
+      <!-- Esquerda: Logo -->
+      <div class="flex items-center gap-3 py-1">
+        <img src="assets/img/logo-codeba.png" alt="CODEBA Autoridade Portuária" class="h-9 w-auto object-contain filter brightness-0 invert opacity-90 hover:opacity-100 transition-opacity">
+        <span class="text-xs text-slate-300 font-medium border-l border-slate-700 pl-3">Porto de Ilhéus</span>
+      </div>
+
+      <nav class="flex items-center overflow-x-auto gap-1 flex-1 lg:justify-center hide-scrollbar">
+        <button id="tab-emit" onclick="switchTab('emit')" class="tab-btn active px-3 py-2 text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg">
+          <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Emitir Ordem
+        </button>
+        <button id="tab-portaria" onclick="switchTab('portaria')" class="tab-btn px-3 py-2 text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg">
+          <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+          Portaria <span id="portaria-badge" class="hidden bg-amber-400 text-navy-800 text-[9px] font-bold px-1.5 rounded-full badge-live">0</span>
+        </button>
+        <button id="tab-manage" onclick="switchTab('manage')" class="tab-btn px-3 py-2 text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg">
+          <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          Cadastros
+        </button>
+        <button id="tab-relatorio" onclick="switchTab('relatorio')" class="tab-btn px-3 py-2 text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg">
+          <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          Relatorios
+        </button>
+        <button id="tab-users" onclick="switchTab('users')" class="tab-btn px-3 py-2 text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg">
+          <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          Usuarios
+        </button>
+        <button id="tab-audit" onclick="switchTab('audit')" class="tab-btn px-3 py-2 text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg">
+          <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Auditoria
+        </button>
+        <button id="tab-sobre" onclick="switchTab('sobre')" class="tab-btn px-3 py-2 text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1.5 transition whitespace-nowrap rounded-lg">
+          <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Ajuda
+        </button>
+      </nav>
+
+      <!-- Direita: Badges e User -->
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <!-- Badges -->
+        <div class="hidden xl:flex items-center gap-2 mr-2">
+          <div class="flex items-center gap-1.5 bg-amber-400/20 border border-amber-400/30 rounded-lg px-2 py-1">
+            <span class="text-amber-300 text-[10px] font-medium">OS:</span>
+            <span id="order-number-display" class="text-amber-200 font-bold text-xs">--</span>
+          </div>
+          <button onclick="openHistoryModal()" class="relative p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition" title="Historico">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span id="order-count-badge" class="hidden absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-400 text-navy-800 text-[9px] font-bold rounded-full flex items-center justify-center badge-live">0</span>
+          </button>
+        </div>
+
+        <!-- User -->
+        <div class="flex items-center gap-3 mr-2">
+          <!-- Avatar com a Inicial do Perfil -->
+          <div id="user-avatar" class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow">F</div>
+          
+          <!-- Nome do Perfil e Cargo -->
+          <div class="flex flex-col text-left">
+            <span id="user-display-name" class="text-xs font-bold text-white leading-tight">Fiel de Armazém</span>
+            <span id="user-display-role" class="text-[10px] text-slate-300">(Emissor (Fiel/Técnico))</span>
+          </div>
+        </div>
+        <div class="w-px h-4 bg-white/20 mx-1"></div>
+        <!-- Alternar tema claro/escuro -->
+        <button id="theme-toggle" onclick="alternarTema()" class="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition" title="Mudar para tema escuro">
+          <span data-theme-icon="moon">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          </span>
+          <span data-theme-icon="sun" class="hidden">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l-1.41 1.41"/></svg>
+          </span>
+        </button>
+        <div class="w-px h-4 bg-white/20 mx-1"></div>
+        <!-- Logout Button -->
+        <button onclick="logoutUser()" class="text-xs text-red-300 hover:text-red-100 font-medium transition flex items-center gap-1" title="Sair do sistema">
+          <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          <span class="hidden sm:inline">Sair</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- TAB EMITIR -->
+  <main id="pane-emit" class="max-w-screen-xl mx-auto px-4 py-6 space-y-5">
+
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-3 flex items-center justify-between">
+        <h2 class="text-white font-bold text-sm flex items-center gap-2">
+          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 014-4z"/>
+          </svg>
+          Cabecalho da Ordem
+        </h2>
+        <span class="bg-amber-400/20 text-amber-200 text-xs px-2 py-0.5 rounded-full border border-amber-400/30">
+          Campos com <strong class="text-amber-300">*</strong> sao obrigatorios
+        </span>
+      </div>
+      <div class="p-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div>
+          <label class="label-style">N Carga Saida</label>
+          <input id="f-num-carga" type="text" readonly
+            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-slate-50 font-bold text-navy-700 cursor-default select-all" />
+        </div>
+        <div>
+          <label class="label-style">Portao N <span class="req">*</span></label>
+          <input id="f-portao" type="text" placeholder="Ex: 02" tabindex="1" class="input-style w-full" />
+        </div>
+        <div>
+          <label class="label-style">Local de Armazenagem <span class="req">*</span></label>
+          <select id="f-armazem" tabindex="2" class="input-style w-full bg-white">
+            <option value="">Selecione...</option>
+            <option value="Armazém 01 Sul">Armazém 01 Sul</option>
+            <option value="Armazém 01 Norte">Armazém 01 Norte</option>
+            <option value="Armazém 02 Sul">Armazém 02 Sul</option>
+            <option value="Armazém 02 Norte">Armazém 02 Norte</option>
+            <option value="Pátio">Pátio</option>
+          </select>
+        </div>
+        <div>
+          <label class="label-style">Tipo de Emissor <span class="req">*</span> <span class="text-gray-400 font-normal">(automático)</span></label>
+          <input id="f-tipo-emissor" type="text" readonly tabindex="3" class="input-style w-full bg-slate-50" />
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-3">
+        <h2 class="text-white font-bold text-sm flex items-center gap-2">
+          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          Dados da Carga
+        </h2>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <div>
+          <label class="label-style">Consignatario <span class="req">*</span></label>
+          <div class="flex gap-2">
+            <input id="f-consignatario" list="list-consig" placeholder="Buscar consignatario..." tabindex="4" class="input-style flex-1" />
+            <datalist id="list-consig"></datalist>
+            <button onclick="openQuickModal('consignatario')" tabindex="-1" class="quick-add-btn" title="Cadastrar novo consignatario">+</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="label-style">Navio <span class="text-gray-400 text-xs font-normal">(opcional)</span></label>
+          <div class="flex gap-2">
+            <input id="f-navio" list="list-navio" placeholder="Buscar navio... (opcional)" tabindex="5" class="input-style flex-1" />
+            <datalist id="list-navio"></datalist>
+            <button onclick="openQuickModal('navio')" tabindex="-1" class="quick-add-btn" title="Cadastrar novo navio">+</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="label-style">Carro / Tipo de Veiculo <span class="req">*</span></label>
+          <select id="f-carro" tabindex="6" class="input-style w-full bg-white">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="label-style">Placa <span class="req">*</span></label>
+          <input id="f-placa" type="text" placeholder="ABC-1234 ou ABC1D23" tabindex="7" maxlength="8"
+            oninput="formatarPlaca(this)" title="Formatos aceitos: ABC-1234 (antigo) ou ABC1D23 (Mercosul)"
+            class="input-style w-full font-mono tracking-widest" />
+        </div>
+
+        <div>
+          <label class="label-style">Motorista <span class="req">*</span></label>
+          <input id="f-motorista" type="text" placeholder="Nome completo" tabindex="8" class="input-style w-full" />
+        </div>
+
+        <div>
+          <label class="label-style">Prontuario / CNH / CPF <span class="req">*</span></label>
+          <input id="f-documento" type="text" placeholder="N do documento" tabindex="9" class="input-style w-full" />
+        </div>
+
+        <div>
+          <label class="label-style">Data Descarga <span class="req">*</span></label>
+          <input id="f-data-descarga" type="date" tabindex="10" class="input-style w-full" />
+        </div>
+
+        <div>
+          <label class="label-style">Doc. Importacao (DI / BL)</label>
+          <input id="f-doc-importacao" type="text" placeholder="N do documento" tabindex="11" class="input-style w-full" />
+        </div>
+
+        <div>
+          <label class="label-style">Cidade / Estado</label>
+          <input id="f-cidade" type="text" placeholder="Ilheus - BA" tabindex="12" class="input-style w-full" />
+        </div>
+
+      </div>
+    </section>
+
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+        <h2 class="text-white font-bold text-sm flex items-center gap-2">
+          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+          </svg>
+          <span id="itens-titulo">Itens da Mercadoria</span>
+        </h2>
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="flex bg-white/15 border border-white/30 rounded-lg p-0.5" role="radiogroup" aria-label="Tipo de carga">
+            <button type="button" id="tipo-mercadoria" onclick="setTipoCarga('mercadoria')"
+              class="px-3 py-1.5 text-xs font-bold rounded-md bg-white text-navy-700 transition">Mercadoria</button>
+            <button type="button" id="tipo-material" onclick="setTipoCarga('material')"
+              class="px-3 py-1.5 text-xs font-semibold rounded-md text-white/70 hover:text-white transition">Material</button>
+          </div>
+          <button onclick="addItemRow()"
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 border border-white/30 text-white text-xs font-semibold rounded-lg transition">
+            <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            Adicionar Item
+          </button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+              <tr class="bg-slate-50 border-b border-gray-200">
+                <th class="th-style text-left" id="itens-col-titulo">Mercadoria</th>
+                <th class="th-style text-left">Codigo</th>
+              <th class="th-style text-left">Embalagem</th>
+              <th class="th-style text-right w-20">Qtd.</th>
+              <th class="th-style text-right w-28">Peso Unit. (kg)</th>
+              <th class="th-style text-right w-28">Peso Total (kg)</th>
+              <th class="th-style text-right w-28">Valor (R$)</th>
+              <th class="th-style text-center w-10"></th>
+            </tr>
+          </thead>
+          <tbody id="items-tbody"></tbody>
+        </table>
+      </div>
+      <div id="items-empty" class="py-10 text-center text-gray-400 text-sm hidden">
+        <svg class="w-10 h-10 mx-auto mb-2 text-gray-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5"/>
+        </svg>
+        Nenhum item adicionado. Clique em "Adicionar Item".
+      </div>
+      <div class="px-5 py-3 bg-slate-50 border-t border-gray-200 flex items-center justify-end gap-8">
+        <span class="text-xs text-gray-500">Peso Total: <strong id="total-peso" class="text-navy-700 text-sm">0,000 kg</strong></span>
+        <span class="text-xs text-gray-500">Valor Total: <strong id="total-valor" class="text-navy-700 text-sm">R$ 0,00</strong></span>
+      </div>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <section class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-3">
+          <h2 class="text-white font-bold text-sm flex items-center gap-2">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+            </svg>
+            Container (se aplicavel)
+          </h2>
+        </div>
+        <div class="p-5 space-y-3">
+          <div>
+            <label class="label-style">Sigla / Numero</label>
+            <input id="f-container-num" type="text" placeholder="Ex: MSCU1234567" tabindex="20"
+              oninput="this.value=this.value.toUpperCase()"
+              class="input-style w-full font-mono tracking-widest" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="label-style">Tara (kg)</label>
+              <input id="f-container-tara" type="number" min="0" step="0.001" placeholder="0,000" tabindex="21" class="input-style w-full" />
+            </div>
+            <div>
+              <label class="label-style">Codigo</label>
+              <input id="f-container-codigo" type="text" placeholder="Cod. container" tabindex="22" class="input-style w-full" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-3">
+          <h2 class="text-white font-bold text-sm flex items-center gap-2">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+            Observacoes e Validacao
+          </h2>
+        </div>
+        <div class="p-5 space-y-4">
+          <div>
+            <label class="label-style">Observacoes</label>
+            <textarea id="f-obs" rows="3" tabindex="23" placeholder="Observacoes relevantes para a ordem de saida..."
+              class="input-style w-full resize-none"></textarea>
+          </div>
+          <div>
+            <label class="label-style">Responsavel pela Emissao <span class="req">*</span> <span class="text-gray-400 font-normal">(automático)</span></label>
+            <input id="f-responsavel" type="text" placeholder="Nome do Fiel ou Tecnico" tabindex="24" class="input-style w-full" />
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 px-6 py-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-4 text-xs text-gray-400">
+          <span class="flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-navy-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Salvar: <kbd class="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs font-mono">F9</kbd>
+            &nbsp;Imprimir: <kbd class="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs font-mono">F10</kbd>
+          </span>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <button onclick="clearForm()"
+            class="px-4 py-2.5 rounded-xl border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-50 transition flex items-center gap-2">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+            Limpar Formulario
+          </button>
+          <button onclick="saveOrder()"
+            class="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition shadow-sm">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+            </svg>
+            Salvar Ordem
+            <kbd class="px-1.5 py-0.5 bg-white/20 rounded text-xs font-mono">F9</kbd>
+          </button>
+          <button onclick="printOrder()"
+            class="flex items-center gap-2 px-5 py-2.5 bg-navy-600 hover:bg-navy-700 text-white text-sm font-bold rounded-xl transition shadow-sm">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+            </svg>
+            Imprimir Ordem
+            <kbd class="px-1.5 py-0.5 bg-white/20 rounded text-xs font-mono">F10</kbd>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- TAB PORTARIA -->
+  <main id="pane-portaria" class="hidden max-w-screen-xl mx-auto px-4 py-6 space-y-5">
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-3 flex items-center justify-between">
+        <h2 class="text-white font-bold text-sm flex items-center gap-2">
+          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+          </svg>
+          Ordens Aguardando Portaria
+        </h2>
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/50" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input id="portaria-search" type="text" placeholder="Buscar por OS ou Placa..."
+              oninput="renderPortaria()"
+              class="pl-9 pr-3 py-1.5 text-sm bg-white/15 border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:bg-white/20 w-56" />
+          </div>
+          <button onclick="renderPortaria()" class="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 border border-white/30 transition" title="Atualizar">
+            <svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-slate-50 border-b border-gray-200">
+              <th class="th-style text-left">N OS</th>
+              <th class="th-style text-left">Consignatario</th>
+              <th class="th-style text-left">Placa</th>
+              <th class="th-style text-left">Motorista</th>
+              <th class="th-style text-left">Tipo Veiculo</th>
+              <th class="th-style text-left">Emitido em</th>
+              <th class="th-style text-left">Status</th>
+              <th class="th-style text-center">Acao</th>
+              <th class="th-style text-center">Excluir</th>
+            </tr>
+          </thead>
+          <tbody id="portaria-tbody"></tbody>
+        </table>
+      </div>
+      <div id="portaria-empty" class="hidden py-14 text-center text-gray-400 text-sm">
+        <svg class="w-12 h-12 mx-auto mb-3 text-gray-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Nenhuma ordem aguardando liberacao na portaria.
+      </div>
+    </section>
+
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="bg-gradient-to-r from-emerald-700 to-emerald-600 px-6 py-3">
+        <h2 class="text-white font-bold text-sm flex items-center gap-2">
+          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Saidas Concluidas
+        </h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-slate-50 border-b border-gray-200">
+              <th class="th-style text-left">N OS</th>
+              <th class="th-style text-left">Consignatario</th>
+              <th class="th-style text-left">Placa</th>
+              <th class="th-style text-left">Agente Portaria</th>
+              <th class="th-style text-left">Liberado em</th>
+              <th class="th-style text-center">Excluir</th>
+            </tr>
+          </thead>
+          <tbody id="concluidas-tbody"></tbody>
+        </table>
+      </div>
+      <div id="concluidas-empty" class="hidden py-10 text-center text-gray-400 text-sm">
+        Nenhuma saida concluida ainda.
+      </div>
+    </section>
+  </main>
+
+  <!-- TAB GERENCIAR -->
+  <main id="pane-manage" class="hidden max-w-screen-xl mx-auto px-4 py-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-5 py-3 flex items-center justify-between">
+          <h3 class="text-white font-bold text-sm flex items-center gap-2">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m6.364 1.636l-.707.707M21 12h-1M17.657 17.657l-.707-.707M12 21v-1m-5.657-1.636l-.707.707M3 12H4M6.343 6.343l.707.707"/>
+            </svg>
+            Navios
+          </h3>
+          <span id="count-navios" class="bg-white/20 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold">0</span>
+        </div>
+        <div class="p-5">
+          <div class="flex gap-2 mb-4">
+            <input id="input-navio" type="text" placeholder="Nome do navio..."
+              class="input-style flex-1" onkeydown="if(event.key==='Enter') addCadastro('navio')" />
+            <button onclick="addCadastro('navio')"
+              class="px-4 py-2 bg-navy-600 hover:bg-navy-700 text-white text-sm font-semibold rounded-xl transition">Adicionar</button>
+          </div>
+          <ul id="list-ui-navios" class="space-y-1 max-h-52 overflow-y-auto"></ul>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-5 py-3 flex items-center justify-between">
+          <h3 class="text-white font-bold text-sm flex items-center gap-2">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            Consignatarios
+          </h3>
+          <span id="count-consig" class="bg-white/20 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold">0</span>
+        </div>
+        <div class="p-5">
+          <div class="flex gap-2 mb-4">
+            <input id="input-consig" type="text" placeholder="Nome do consignatario..."
+              class="input-style flex-1" onkeydown="if(event.key==='Enter') addCadastro('consignatario')" />
+            <button onclick="addCadastro('consignatario')"
+              class="px-4 py-2 bg-navy-600 hover:bg-navy-700 text-white text-sm font-semibold rounded-xl transition">Adicionar</button>
+          </div>
+          <ul id="list-ui-consig" class="space-y-1 max-h-52 overflow-y-auto"></ul>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-5 py-3 flex items-center justify-between">
+          <h3 class="text-white font-bold text-sm flex items-center gap-2">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+            Mercadorias
+          </h3>
+          <span id="count-mercs" class="bg-white/20 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold">0</span>
+        </div>
+        <div class="p-5">
+          <div class="grid grid-cols-2 gap-2 mb-2">
+            <input id="input-merc-nome" type="text" placeholder="Nome da mercadoria"
+              class="input-style" onkeydown="if(event.key==='Enter') addCadastro('mercadoria')" />
+            <input id="input-merc-codigo" type="text" placeholder="Codigo (opcional)"
+              class="input-style" onkeydown="if(event.key==='Enter') addCadastro('mercadoria')" />
+          </div>
+          <button onclick="addCadastro('mercadoria')"
+            class="w-full py-2 bg-navy-600 hover:bg-navy-700 text-white text-sm font-semibold rounded-xl transition mb-4">
+            Adicionar Mercadoria
+          </button>
+          <ul id="list-ui-mercs" class="space-y-1 max-h-52 overflow-y-auto"></ul>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-5 py-3 flex items-center justify-between">
+          <h3 class="text-white font-bold text-sm flex items-center gap-2">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+            Lotes
+          </h3>
+          <span id="count-lotes" class="bg-white/20 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold">0</span>
+        </div>
+        <div class="p-5">
+          <div class="flex gap-2 mb-4">
+            <input id="input-lote" type="text" placeholder="Numero / descricao do lote..."
+              class="input-style flex-1" onkeydown="if(event.key==='Enter') addCadastro('lote')" />
+            <button onclick="addCadastro('lote')"
+              class="px-4 py-2 bg-navy-600 hover:bg-navy-700 text-white text-sm font-semibold rounded-xl transition">Adicionar</button>
+          </div>
+          <ul id="list-ui-lotes" class="space-y-1 max-h-52 overflow-y-auto"></ul>
+        </div>
+      </div>
+
+      <!-- Tipos de Veiculo - NOVO -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden md:col-span-2">
+        <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-5 py-3 flex items-center justify-between">
+          <h3 class="text-white font-bold text-sm flex items-center gap-2">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+            </svg>
+            Tipos de Veiculo
+          </h3>
+          <span id="count-veiculos" class="bg-white/20 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold">0</span>
+        </div>
+        <div class="p-5">
+          <p class="text-xs text-gray-500 mb-3">Cadastre aqui os tipos de veiculo que aparecerao no formulario de emissao de ordem.</p>
+          <div class="flex gap-2 mb-4">
+            <input id="input-veiculo" type="text" placeholder="Ex: Caminhao Bau, Carreta, Bitrem..."
+              class="input-style flex-1" onkeydown="if(event.key==='Enter') addCadastro('veiculo')" />
+            <button onclick="addCadastro('veiculo')"
+              class="px-4 py-2 bg-navy-600 hover:bg-navy-700 text-white text-sm font-semibold rounded-xl transition">Adicionar</button>
+          </div>
+          <ul id="list-ui-veiculos" class="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-52 overflow-y-auto"></ul>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- TAB RELATORIOS -->
+  <main id="pane-relatorio" class="hidden max-w-screen-xl mx-auto px-4 py-6 space-y-5">
+
+    <!-- Filtros -->
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-3 flex items-center justify-between">
+        <h2 class="text-white font-bold text-sm flex items-center gap-2">
+          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>
+          Filtros de Pesquisa
+        </h2>
+        <button onclick="limparFiltros()" class="text-xs text-blue-200 hover:text-white transition font-medium">Limpar filtros</button>
+      </div>
+      <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+
+          <!-- Filtro: Consignatario (multi-select) -->
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide">Consignatario</label>
+            <div class="relative" id="dd-consig-wrap">
+              <button type="button" onclick="toggleDropdown('dd-consig')" class="w-full flex items-center justify-between border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-slate-50 hover:border-navy-400 transition text-left">
+                <span id="dd-consig-label" class="text-gray-500 truncate">Todos os consignatarios</span>
+                <svg class="w-4 h-4 text-gray-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+              <div id="dd-consig" class="hidden absolute z-30 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+                <div class="p-2 space-y-0.5" id="dd-consig-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filtro: Mercadoria (multi-select) -->
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide">Mercadoria</label>
+            <div class="relative" id="dd-merc-wrap">
+              <button type="button" onclick="toggleDropdown('dd-merc')" class="w-full flex items-center justify-between border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-slate-50 hover:border-navy-400 transition text-left">
+                <span id="dd-merc-label" class="text-gray-500 truncate">Todas as mercadorias</span>
+                <svg class="w-4 h-4 text-gray-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+              <div id="dd-merc" class="hidden absolute z-30 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+                <div class="p-2 space-y-0.5" id="dd-merc-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filtro: Data Inicial -->
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide">Periodo – De</label>
+            <input id="f-rel-data-ini" type="date" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-slate-50" />
+          </div>
+
+          <!-- Filtro: Data Final -->
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide">Periodo – Ate</label>
+            <input id="f-rel-data-fim" type="date" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-slate-50" />
+          </div>
+
+        </div>
+
+        <!-- Status -->
+        <div class="mt-4 flex flex-wrap gap-2 items-center">
+          <span class="text-xs font-bold text-gray-600 uppercase tracking-wide mr-1">Status:</span>
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="checkbox" id="f-rel-status-pend" checked class="w-3.5 h-3.5 accent-amber-500" />
+            <span class="text-xs font-medium text-gray-700">Aguardando Portaria</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="checkbox" id="f-rel-status-lib" checked class="w-3.5 h-3.5 accent-emerald-500" />
+            <span class="text-xs font-medium text-gray-700">Liberado</span>
+          </label>
+        </div>
+
+        <!-- Botao -->
+        <div class="mt-5 flex justify-end">
+          <button onclick="gerarRelatorio()" id="btn-gerar-relatorio"
+            class="flex items-center gap-2 px-6 py-2.5 bg-navy-600 hover:bg-navy-700 text-white text-sm font-bold rounded-xl transition shadow-sm">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            Gerar Relatorio
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Resultado do Relatorio -->
+    <section id="rel-resultado" class="hidden space-y-4">
+
+      <!-- Cards de totais -->
+      <div id="rel-totais" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+
+      <!-- Tabela de ordens -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-white font-bold text-sm flex items-center gap-2">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+            Ordens Encontradas
+          </h2>
+          <div class="flex items-center gap-2">
+            <span id="rel-count-badge" class="bg-amber-400 text-navy-800 text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+            <button onclick="exportarRelatorioPDF()" id="btn-exportar-relatorio"
+              class="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition shadow-sm">
+              <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              Exportar PDF
+            </button>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-slate-50 border-b border-gray-200">
+                <th class="th-style text-left">N OS</th>
+                <th class="th-style text-left">Data Descarga</th>
+                <th class="th-style text-left">Consignatario</th>
+                <th class="th-style text-left">Placa</th>
+                <th class="th-style text-left">Motorista</th>
+                <th class="th-style text-left">Status</th>
+                <th class="th-style text-right">Qtd. Total</th>
+                <th class="th-style text-right">Peso Total (kg)</th>
+                <th class="th-style text-right">Valor Total (R$)</th>
+              </tr>
+            </thead>
+            <tbody id="rel-tbody"></tbody>
+          </table>
+        </div>
+        <div id="rel-empty" class="hidden py-12 text-center text-gray-400 text-sm">
+          <svg class="w-10 h-10 mx-auto mb-2 text-gray-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Nenhuma ordem encontrada com os filtros aplicados.
+        </div>
+      </div>
+
+      <!-- Tabela de itens agregados -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-emerald-700 to-emerald-600 px-6 py-3">
+          <h2 class="text-white font-bold text-sm flex items-center gap-2">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            Mercadorias Consolidadas
+          </h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-slate-50 border-b border-gray-200">
+                <th class="th-style text-left">Mercadoria</th>
+                <th class="th-style text-right">Qtd. Total</th>
+                <th class="th-style text-right">Peso Total (kg)</th>
+                <th class="th-style text-right">Valor Total (R$)</th>
+              </tr>
+            </thead>
+            <tbody id="rel-mercs-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- TAB AJUDA (tutorial para o usuário) -->
+  <main id="pane-sobre" class="hidden max-w-screen-xl mx-auto px-4 py-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+          <svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-white font-bold text-base leading-tight">Central de Ajuda</h1>
+          <p class="text-blue-200 text-xs mt-0.5">Aprenda a usar o sistema passo a passo, sem complicação</p>
+        </div>
+      </div>
+      <div class="p-8 max-w-4xl mx-auto space-y-10">
+
+        <!-- O que é este sistema -->
+        <section class="space-y-4">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-8 h-8 rounded-lg bg-navy-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            </div>
+            <h2 class="text-navy-700 font-bold text-lg">1. O que é este sistema?</h2>
+          </div>
+          <div class="bg-navy-50 border border-navy-100 rounded-xl p-5 space-y-3">
+            <p class="text-gray-700 text-sm">Este sistema substitui a <strong>folha de papel</strong> usada para liberar a saída de caminhões com carga no Porto de Ilhéus. Tudo passa a ser feito aqui na tela: <strong>registrar a saída, liberar na portaria e consultar depois</strong>.</p>
+            <p class="text-gray-700 text-sm">Cada saída registrada ganha um <strong>número (OS)</strong> e um <strong>código de verificação</strong> no documento impresso, que comprova que a ordem é verdadeira.</p>
+          </div>
+        </section>
+
+        <!-- Para que serve cada aba -->
+        <section class="space-y-4">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-8 h-8 rounded-lg bg-navy-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </div>
+            <h2 class="text-navy-700 font-bold text-lg">2. Para que serve cada aba?</h2>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="p-4 bg-slate-50 border border-gray-200 rounded-xl">
+              <p class="font-bold text-gray-800 text-sm">Emitir Ordem</p>
+              <p class="text-gray-600 text-sm mt-1">É onde você <strong>registra a saída</strong> de um caminhão: dados do veículo, do motorista e da mercadoria.</p>
+            </div>
+            <div class="p-4 bg-slate-50 border border-gray-200 rounded-xl">
+              <p class="font-bold text-gray-800 text-sm">Portaria</p>
+              <p class="text-gray-600 text-sm mt-1">É onde o agente da guarita <strong>libera a saída</strong> do caminhão quando ele chega ao portão.</p>
+            </div>
+            <div class="p-4 bg-slate-50 border border-gray-200 rounded-xl">
+              <p class="font-bold text-gray-800 text-sm">Cadastros</p>
+              <p class="text-gray-600 text-sm mt-1">É a <strong>lista de nomes</strong> que o sistema usa para preencher a tela mais rápido: navios, clientes, mercadorias e tipos de veículo.</p>
+            </div>
+            <div class="p-4 bg-slate-50 border border-gray-200 rounded-xl">
+              <p class="font-bold text-gray-800 text-sm">Relatórios</p>
+              <p class="text-gray-600 text-sm mt-1">É onde você <strong>pesquisa saídas já feitas</strong> (por período, cliente ou mercadoria) e gera um <strong>PDF</strong>.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Passo a passo: emitir ordem -->
+        <section class="space-y-4">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-8 h-8 rounded-lg bg-navy-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </div>
+            <h2 class="text-navy-700 font-bold text-lg">3. Como registrar a saída de um caminhão</h2>
+          </div>
+          <div class="space-y-3">
+            <div class="flex gap-4 p-5 bg-amber-50 border border-amber-200 rounded-xl">
+              <div class="w-10 h-10 rounded-full bg-amber-500 text-white font-bold text-sm flex items-center justify-center flex-shrink-0">1</div>
+              <div>
+                <p class="font-bold text-gray-800 text-sm">Abra a aba "Emitir Ordem"</p>
+                <p class="text-gray-600 text-sm mt-1">Clique em <strong>Emitir Ordem</strong> no menu de cima. Os campos com <strong class="text-red-500">*</strong> são obrigatórios: sem eles, não dá para salvar.</p>
+                <button onclick="switchTab('emit')" class="mt-2 px-3 py-1.5 bg-navy-600 hover:bg-navy-700 text-white text-xs font-bold rounded-lg transition">Abrir Emitir Ordem</button>
+              </div>
+            </div>
+            <div class="flex gap-4 p-5 bg-amber-50 border border-amber-200 rounded-xl">
+              <div class="w-10 h-10 rounded-full bg-amber-500 text-white font-bold text-sm flex items-center justify-center flex-shrink-0">2</div>
+              <div>
+                <p class="font-bold text-gray-800 text-sm">Preencha os dados do caminhão e do motorista</p>
+                <p class="text-gray-600 text-sm mt-1">Informe o portão, <strong>escolha o local de armazenagem na lista</strong>, cliente (consignatário), tipo de veículo, <strong>placa</strong> (formato <strong>ABC-1234</strong> ou <strong>ABC1D23</strong>), nome do motorista e documento (CNH, CPF ou prontuário). Comece a digitar o nome do cliente que o sistema sugere sozinho.</p>
+              </div>
+            </div>
+            <div class="flex gap-4 p-5 bg-amber-50 border border-amber-200 rounded-xl">
+              <div class="w-10 h-10 rounded-full bg-amber-500 text-white font-bold text-sm flex items-center justify-center flex-shrink-0">3</div>
+              <div>
+                <p class="font-bold text-gray-800 text-sm">Adicione a mercadoria ou o material</p>
+                <p class="text-gray-600 text-sm mt-1">No topo da lista, escolha se a saída é de <strong>Mercadoria</strong> ou <strong>Material</strong>. Depois clique em <strong>Adicionar Item</strong> e informe o que o caminhão está levando: descrição, quantidade e peso. Repita para cada item diferente. O peso e o valor totais são calculados sozinhos.</p>
+              </div>
+            </div>
+            <div class="flex gap-4 p-5 bg-amber-50 border border-amber-200 rounded-xl">
+              <div class="w-10 h-10 rounded-full bg-amber-500 text-white font-bold text-sm flex items-center justify-center flex-shrink-0">4</div>
+              <div>
+                <p class="font-bold text-gray-800 text-sm">Salve e imprima</p>
+                <p class="text-gray-600 text-sm mt-1">Clique em <strong>Salvar Ordem</strong> (ou aperte <kbd class="px-1 py-0.5 bg-amber-100 border border-amber-300 rounded text-xs">F9</kbd>) — o <strong>número da OS já vem reservado</strong> no topo e vale para todos os computadores. Depois clique em <strong>Imprimir Ordem</strong> (ou <kbd class="px-1 py-0.5 bg-amber-100 border border-amber-300 rounded text-xs">F10</kbd>) para gerar o papel que acompanha o caminhão. A ordem fica com a situação <strong>Aguardando Portaria</strong>.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Passo a passo: portaria -->
+        <section class="space-y-4">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <h2 class="text-navy-700 font-bold text-lg">4. Como liberar o caminhão na portaria</h2>
+          </div>
+          <div class="space-y-3">
+            <div class="flex gap-4 p-5 bg-emerald-50 border border-emerald-200 rounded-xl">
+              <div class="w-10 h-10 rounded-full bg-emerald-600 text-white font-bold text-sm flex items-center justify-center flex-shrink-0">1</div>
+              <div>
+                <p class="font-bold text-gray-800 text-sm">Encontre a ordem do caminhão</p>
+                <p class="text-gray-600 text-sm mt-1">Abra a aba <strong>Portaria</strong> e digite o <strong>número da OS ou a placa</strong> no campo de busca. A ordem aparece na lista de "Aguardando Portaria".</p>
+                <button onclick="switchTab('portaria')" class="mt-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition">Abrir Portaria</button>
+              </div>
+            </div>
+            <div class="flex gap-4 p-5 bg-emerald-50 border border-emerald-200 rounded-xl">
+              <div class="w-10 h-10 rounded-full bg-emerald-600 text-white font-bold text-sm flex items-center justify-center flex-shrink-0">2</div>
+              <div>
+                <p class="font-bold text-gray-800 text-sm">Confirme a saída</p>
+                <p class="text-gray-600 text-sm mt-1">Clique em <strong>Confirmar Saída</strong> — o seu nome já vem preenchido sozinho — e confirme. Pronto: a ordem muda para <strong>Liberado</strong> e vai para a lista de "Saídas Concluídas", com dia e hora registrados.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Cadastros e relatórios -->
+        <section class="space-y-4">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-8 h-8 rounded-lg bg-navy-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            </div>
+            <h2 class="text-navy-700 font-bold text-lg">5. Cadastros e relatórios</h2>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="p-5 bg-slate-50 border border-gray-200 rounded-xl">
+              <h3 class="font-bold text-gray-800 text-sm mb-2">Para que servem os Cadastros?</h3>
+              <p class="text-gray-600 text-sm">São <strong>listas de nomes</strong> que você usa todo dia: clientes, navios, mercadorias e tipos de caminhão. Se cadastrar uma vez, na hora de emitir a ordem é só <strong>começar a digitar</strong> que o sistema completa para você. Também dá para cadastrar um nome novo direto na tela de emissão, clicando no botão <strong>+</strong> ao lado do campo.</p>
+              <button onclick="switchTab('manage')" class="mt-3 px-3 py-1.5 bg-navy-600 hover:bg-navy-700 text-white text-xs font-bold rounded-lg transition">Abrir Cadastros</button>
+            </div>
+            <div class="p-5 bg-slate-50 border border-gray-200 rounded-xl">
+              <h3 class="font-bold text-gray-800 text-sm mb-2">Como pesquiso saídas antigas?</h3>
+              <p class="text-gray-600 text-sm">Na aba <strong>Relatórios</strong>, escolha o cliente, a mercadoria, o período e a situação, e clique em <strong>Gerar Relatório</strong>. O sistema mostra os totais e a lista. Para guardar ou enviar por e-mail, clique em <strong>Exportar PDF</strong>.</p>
+              <button onclick="switchTab('relatorio')" class="mt-3 px-3 py-1.5 bg-navy-600 hover:bg-navy-700 text-white text-xs font-bold rounded-lg transition">Abrir Relatórios</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Dúvidas frequentes -->
+        <section class="space-y-4">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-8 h-8 rounded-lg bg-navy-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <h2 class="text-navy-700 font-bold text-lg">6. Dúvidas frequentes</h2>
+          </div>
+          <div class="space-y-3">
+            <div class="p-5 bg-slate-50 border border-gray-200 rounded-xl">
+              <p class="font-bold text-gray-800 text-sm">O que significa "Aguardando Portaria" e "Liberado"?</p>
+              <p class="text-gray-600 text-sm mt-1"><strong>Aguardando Portaria</strong> = a saída foi registrada, mas o caminhão ainda não passou pelo portão. <strong>Liberado</strong> = o agente da portaria já confirmou a saída.</p>
+            </div>
+            <div class="p-5 bg-slate-50 border border-gray-200 rounded-xl">
+              <p class="font-bold text-gray-800 text-sm">Esqueci de imprimir a ordem. E agora?</p>
+              <p class="text-gray-600 text-sm mt-1">Sem problema. Clique no <strong>relógio</strong> ao lado do número da OS (no topo da tela) para ver o histórico, abra a ordem e clique em <strong>Imprimir Ordem</strong> de novo.</p>
+            </div>
+            <div class="p-5 bg-slate-50 border border-gray-200 rounded-xl">
+              <p class="font-bold text-gray-800 text-sm">Registrei uma ordem com erro. Como apago?</p>
+              <p class="text-gray-600 text-sm mt-1">Na aba <strong>Portaria</strong>, use o botão de <strong>lixeira</strong> na linha da ordem. Atenção: só o <strong>administrador</strong> consegue apagar.</p>
+            </div>
+            <div class="p-5 bg-slate-50 border border-gray-200 rounded-xl">
+              <p class="font-bold text-gray-800 text-sm">Não consigo liberar uma saída na portaria</p>
+              <p class="text-gray-600 text-sm mt-1">Confira se você entrou com o usuário da <strong>portaria</strong>. Quem emite ordem (fiel/técnico) não tem permissão para liberar — aparece "Sem Permissão" no lugar do botão.</p>
+            </div>
+            <div class="p-5 bg-slate-50 border border-gray-200 rounded-xl">
+              <p class="font-bold text-gray-800 text-sm">Por que não consigo alterar o Tipo de Emissor e o Responsável?</p>
+              <p class="text-gray-600 text-sm mt-1">Esses campos são <strong>preenchidos sozinhos</strong>: o Tipo de Emissor mostra o <strong>perfil</strong> de quem entrou no sistema e o Responsável mostra o <strong>nome</strong>. O mesmo vale para o nome do agente na portaria. Assim cada ordem tem um responsável de verdade.</p>
+            </div>
+            <div class="p-5 bg-slate-50 border border-gray-200 rounded-xl">
+              <p class="font-bold text-gray-800 text-sm">Onde vejo quem fez o quê no sistema?</p>
+              <p class="text-gray-600 text-sm mt-1">O <strong>administrador</strong> tem a aba <strong>Auditoria</strong>, que registra entradas, saídas, emissões, liberações, impressões e exclusões — com data, hora e responsável. Dá para filtrar por período, ação, usuário e número da OS.</p>
+            </div>
+            <div class="p-5 bg-slate-50 border border-gray-200 rounded-xl">
+              <p class="font-bold text-gray-800 text-sm">Como cadastro um usuário novo?</p>
+              <p class="text-gray-600 text-sm mt-1">São <strong>2 passos</strong>: 1) cadastre nome, login e perfil na aba <strong>Usuários</strong>; 2) crie o acesso com a senha no <strong>Supabase</strong> (Authentication → Users, e-mail <span class="font-mono">login@codeba.local</span>) e vincule pelo login. Sem o passo 2, a pessoa não entra.</p>
+            </div>
+            <div class="p-5 bg-slate-50 border border-gray-200 rounded-xl">
+              <p class="font-bold text-gray-800 text-sm">Como mudo para o modo escuro?</p>
+              <p class="text-gray-600 text-sm mt-1">Clique no ícone de <strong>lua/sol</strong> no topo da tela (ao lado do seu nome) ou na tela de entrada. O sistema lembra da sua escolha.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Atalhos -->
+        <section class="space-y-4">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-8 h-8 rounded-lg bg-navy-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/></svg>
+            </div>
+            <h2 class="text-navy-700 font-bold text-lg">7. Teclas de atalho (para agilizar)</h2>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm border border-gray-200 rounded-xl overflow-hidden">
+              <thead class="bg-navy-700 text-white">
+                <tr>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide">Atalho</th>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide">Acao</th>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide">Aba</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr class="hover:bg-slate-50">
+                  <td class="px-5 py-3"><kbd class="px-2 py-1 bg-gray-100 border border-gray-300 rounded font-mono text-xs font-bold">F9</kbd></td>
+                  <td class="px-5 py-3 text-gray-700">Salvar a ordem (sem imprimir)</td>
+                  <td class="px-5 py-3 text-gray-500">Emitir Ordem</td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                  <td class="px-5 py-3"><kbd class="px-2 py-1 bg-gray-100 border border-gray-300 rounded font-mono text-xs font-bold">F10</kbd></td>
+                  <td class="px-5 py-3 text-gray-700">Imprimir a ordem</td>
+                  <td class="px-5 py-3 text-gray-500">Emitir Ordem</td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                  <td class="px-5 py-3"><kbd class="px-2 py-1 bg-gray-100 border border-gray-300 rounded font-mono text-xs font-bold">Esc</kbd></td>
+                  <td class="px-5 py-3 text-gray-700">Fechar janelas abertas</td>
+                  <td class="px-5 py-3 text-gray-500">Qualquer aba</td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                  <td class="px-5 py-3"><kbd class="px-2 py-1 bg-gray-100 border border-gray-300 rounded font-mono text-xs font-bold">Enter</kbd></td>
+                  <td class="px-5 py-3 text-gray-700">Confirmar (nas janelas e nos cadastros)</td>
+                  <td class="px-5 py-3 text-gray-500">Qualquer aba</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Rodape do documento -->
+        <div class="border-t border-gray-100 pt-6 flex items-center justify-between text-xs text-gray-400">
+          <span>CODEBA - Companhia das Docas do Estado da Bahia - Porto de Ilheus</span>
+          <span>Sistema de Controle de Saida de Cargas v2.0</span>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- TAB GERENCIAR USUARIOS (APENAS ADMIN) -->
+  <main id="pane-users" class="hidden max-w-screen-xl mx-auto px-4 py-6 space-y-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-4 flex items-center justify-between">
+        <h2 class="text-white font-bold text-sm flex items-center gap-2">
+          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+          </svg>
+          Gerenciar Usuarios do Sistema
+        </h2>
+        <span id="count-users" class="bg-white/20 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold">0</span>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-100">
+        <!-- Add User Form -->
+        <div class="p-6 md:col-span-1 bg-slate-50">
+          <h3 class="text-sm font-bold text-navy-700 mb-4">Novo Usuario</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="label-style">Nome</label>
+              <input id="u-nome" type="text" placeholder="Nome Completo" class="input-style w-full bg-white" />
+            </div>
+            <div>
+              <label class="label-style">Login de Acesso <span class="req">*</span></label>
+              <input id="u-login" type="text" placeholder="ex: j.silva" class="input-style w-full bg-white" />
+            </div>
+            <div>
+              <label class="label-style">Perfil / Acesso <span class="req">*</span></label>
+              <select id="u-perfil" class="input-style w-full bg-white">
+                <option value="Emissor (Fiel/Tecnico)">Emissor (Fiel/Tecnico)</option>
+                <option value="Agente de Portaria">Agente de Portaria</option>
+                <option value="Administrador">Administrador</option>
+              </select>
+            </div>
+            <button onclick="addUser()" class="w-full py-2.5 bg-navy-600 hover:bg-navy-700 text-white text-sm font-bold rounded-xl transition shadow-sm mt-2">
+              Cadastrar Usuario
+            </button>
+            <p class="text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">A senha de acesso é criada no Supabase (Authentication → Users, como <span class="font-mono">login@codeba.local</span>) e vinculada pelo login. Sem isso, o novo usuário não entra.</p>
+          </div>
+        </div>
+        
+        <!-- Users List -->
+        <div class="p-0 md:col-span-2 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-gray-100 border-b border-gray-200">
+                <th class="th-style text-left">Nome</th>
+                <th class="th-style text-left">Login</th>
+                <th class="th-style text-left">Perfil</th>
+                <th class="th-style text-center w-20">Acao</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+          <div id="users-empty" class="hidden py-10 text-center text-gray-400 text-sm">
+            Nenhum usuario cadastrado.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- TAB AUDITORIA (APENAS ADMIN) -->
+  <main id="pane-audit" class="hidden max-w-screen-xl mx-auto px-4 py-6 space-y-5">
+    <section class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-3 flex items-center justify-between">
+        <h2 class="text-white font-bold text-sm flex items-center gap-2">
+          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Quem fez o quê e quando
+        </h2>
+        <button onclick="carregarAuditoria()" class="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 border border-white/30 transition" title="Atualizar">
+          <svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+        </button>
+      </div>
+      <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide">De</label>
+            <input id="f-aud-data-ini" type="date" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-slate-50" />
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide">Até</label>
+            <input id="f-aud-data-fim" type="date" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-slate-50" />
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide">Ação</label>
+            <select id="f-aud-acao" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-slate-50">
+              <option value="">Todas</option>
+              <option value="LOGIN">Login</option>
+              <option value="LOGOUT">Logout</option>
+              <option value="ORDEM_EMITIDA">Ordem emitida</option>
+              <option value="ORDEM_IMPRESSA">Ordem impressa</option>
+              <option value="SAIDA_LIBERADA">Saída liberada</option>
+              <option value="ORDEM_EXCLUIDA">Ordem excluída</option>
+              <option value="USUARIO_CRIADO">Usuário criado</option>
+              <option value="USUARIO_REMOVIDO">Usuário removido</option>
+            </select>
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide">Usuário</label>
+            <input id="f-aud-usuario" type="text" placeholder="Nome ou login..." class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-slate-50" />
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide">Nº OS</label>
+            <input id="f-aud-os" type="text" placeholder="OS-2026-00001" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-slate-50 font-mono" />
+          </div>
+        </div>
+        <div class="mt-5 flex justify-end">
+          <button onclick="carregarAuditoria()"
+            class="flex items-center gap-2 px-6 py-2.5 bg-navy-600 hover:bg-navy-700 text-white text-sm font-bold rounded-xl transition shadow-sm">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            Consultar
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-3 flex items-center justify-between">
+        <h2 class="text-white font-bold text-sm flex items-center gap-2">
+          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+          Registros
+        </h2>
+        <span id="audit-count-badge" class="bg-amber-400 text-navy-800 text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-slate-50 border-b border-gray-200">
+              <th class="th-style text-left">Data/Hora</th>
+              <th class="th-style text-left">Usuário</th>
+              <th class="th-style text-left">Perfil</th>
+              <th class="th-style text-left">Ação</th>
+              <th class="th-style text-left">OS / Alvo</th>
+              <th class="th-style text-left">Detalhes</th>
+            </tr>
+          </thead>
+          <tbody id="audit-tbody"></tbody>
+        </table>
+      </div>
+      <div id="audit-empty" class="py-12 text-center text-gray-400 text-sm">
+        <svg class="w-10 h-10 mx-auto mb-2 text-gray-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <p>Nenhum registro encontrado com os filtros aplicados.</p>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<!-- QUICK MODAL -->
+<div id="quick-modal" class="fixed inset-0 z-50 hidden modal-overlay bg-black/50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-4 rounded-t-2xl flex items-center justify-between">
+      <h3 id="quick-modal-title" class="text-white font-bold text-sm">Cadastro Rapido</h3>
+      <button onclick="closeQuickModal()" class="text-white/70 hover:text-white transition">
+        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="p-6 space-y-4">
+      <p id="quick-modal-hint" class="text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2"></p>
+      <input id="quick-input" type="text" placeholder="Nome..."
+        class="input-style w-full" onkeydown="if(event.key==='Enter') saveQuick()" />
+      <div class="flex gap-3 justify-end">
+        <button onclick="closeQuickModal()"
+          class="px-4 py-2 border border-gray-300 text-gray-600 text-sm rounded-xl hover:bg-gray-50 transition">Cancelar</button>
+        <button onclick="saveQuick()"
+          class="px-5 py-2 bg-navy-600 hover:bg-navy-700 text-white text-sm font-bold rounded-xl transition">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PORTARIA CONFIRM MODAL -->
+<div id="portaria-modal" class="fixed inset-0 z-50 hidden modal-overlay bg-black/50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="bg-gradient-to-r from-emerald-700 to-emerald-600 px-6 py-4 rounded-t-2xl flex items-center justify-between">
+      <h3 class="text-white font-bold text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Confirmar Saida na Portaria
+      </h3>
+      <button onclick="closePortariaModal()" class="text-white/70 hover:text-white transition">
+        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="p-6 space-y-4">
+      <div id="portaria-modal-info" class="text-sm text-gray-600 bg-slate-50 rounded-xl p-4 border border-gray-200"></div>
+      <div>
+        <label class="label-style">Nome do Agente de Portaria <span class="req">*</span> <span class="text-gray-400 font-normal">(automático)</span></label>
+        <input id="portaria-agente" type="text" placeholder="Nome do servidor responsavel"
+          class="input-style w-full" onkeydown="if(event.key==='Enter') confirmarSaidaExec()" />
+      </div>
+      <div class="flex gap-3 justify-end">
+        <button onclick="closePortariaModal()"
+          class="px-4 py-2 border border-gray-300 text-gray-600 text-sm rounded-xl hover:bg-gray-50 transition">Cancelar</button>
+        <button onclick="confirmarSaidaExec()"
+          class="flex items-center gap-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition">
+          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+          Confirmar Saida
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY MODAL -->
+<div id="history-modal" class="fixed inset-0 z-50 hidden modal-overlay bg-black/50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
+    <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-4 rounded-t-2xl flex items-center justify-between flex-shrink-0">
+      <h3 class="text-white font-bold text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Historico de Ordens Emitidas
+      </h3>
+      <button onclick="closeHistoryModal()" class="text-white/70 hover:text-white transition">
+        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="overflow-y-auto flex-1 p-4">
+      <div id="history-content" class="space-y-2"></div>
+      <div id="history-empty" class="py-12 text-center text-gray-400 text-sm hidden">
+        <svg class="w-10 h-10 mx-auto mb-2 text-gray-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Nenhuma ordem registrada ainda.
+      </div>
+    </div>
+    <div class="px-6 py-3 border-t border-gray-100 flex justify-between items-center flex-shrink-0">
+      <button onclick="clearHistory()" class="text-xs text-red-500 hover:text-red-700 font-medium transition">
+        Limpar historico
+      </button>
+      <button onclick="closeHistoryModal()"
+        class="px-5 py-2 bg-navy-600 hover:bg-navy-700 text-white text-sm font-medium rounded-xl transition">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 items-end pointer-events-none"></div>
+
+<!-- PRINT DOCUMENT -->
+<div id="print-document"></div>
+
+
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
