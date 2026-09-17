@@ -288,6 +288,10 @@
   #portaria-tbody tr td:last-child, #concluidas-tbody tr td:last-child,
   #rel-tbody tr td:last-child, #rel-mercs-tbody tr td:last-child,
   #users-tbody tr td:last-child, #audit-tbody tr td:last-child { border-bottom:0; }
+  /* Linha de ação vazia (ex.: EXCLUIR sem permissão de admin): esconde no card */
+  #portaria-tbody tr td:empty, #concluidas-tbody tr td:empty,
+  #rel-tbody tr td:empty, #rel-mercs-tbody tr td:empty,
+  #users-tbody tr td:empty, #audit-tbody tr td:empty { display:none; }
   /* Esconde a thead das tabelas que viraram cards (classe .tbl-cards no <table>) */
   .tbl-cards thead { display:none; }
   /* Rótulos das colunas (ordem = ordem das <td> geradas no app.js) */
