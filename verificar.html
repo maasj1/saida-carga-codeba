@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verificar OS — CODEBA · Porto de Ilhéus</title>
+  <meta name="description" content="Conferência pública de autenticidade de Ordem de Saída de Carga — CODEBA." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/styles.css?v=3" />
+</head>
+<body class="bg-[#f0f4f8] text-gray-800 antialiased min-h-screen" style="font-family:'Inter',sans-serif">
+
+  <div class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+      <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-navy-700 to-navy-600 p-6 text-center">
+          <img src="assets/img/logo-codeba.png" alt="CODEBA" class="h-10 w-auto mx-auto mb-2 object-contain filter brightness-0 invert opacity-90" />
+          <h1 class="text-white font-bold text-base">Conferência de Ordem de Saída</h1>
+          <p class="text-blue-200 text-xs mt-0.5">Verificação pública de autenticidade</p>
+        </div>
+
+        <div class="p-6">
+          <!-- Busca manual (quando aberta sem ?os=) -->
+          <div id="v-search" class="hidden space-y-3">
+            <label class="label-style">Número da OS</label>
+            <input id="v-input" type="text" placeholder="OS-2026-00001"
+              class="input-style w-full font-mono" onkeydown="if(event.key==='Enter') verificarDigitada()" />
+            <button onclick="verificarDigitada()"
+              class="w-full py-2.5 bg-navy-600 hover:bg-navy-700 text-white text-sm font-bold rounded-xl transition">Verificar</button>
+          </div>
+
+          <div id="v-loading" class="py-10 text-center text-sm text-gray-500">
+            <svg class="w-8 h-8 mx-auto mb-2 animate-spin text-navy-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+            Consultando a ordem...
+          </div>
+
+          <!-- Resultado -->
+          <div id="v-result" class="hidden space-y-4">
+            <div class="text-center">
+              <p class="text-xs font-bold text-gray-500 uppercase tracking-wide">Ordem de Saída</p>
+              <p id="v-num" class="text-xl font-extrabold text-navy-700 font-mono">--</p>
+              <p id="v-status" class="mt-2"></p>
+            </div>
+            <dl class="divide-y divide-gray-100 text-sm">
+              <div class="py-2 flex justify-between gap-3"><dt class="text-gray-500">Consignatário</dt><dd id="v-consig" class="font-semibold text-right">--</dd></div>
+              <div class="py-2 flex justify-between gap-3"><dt class="text-gray-500">Placa</dt><dd id="v-placa" class="font-semibold font-mono text-right">--</dd></div>
+              <div class="py-2 flex justify-between gap-3"><dt class="text-gray-500">Motorista</dt><dd id="v-mot" class="font-semibold text-right">--</dd></div>
+              <div class="py-2 flex justify-between gap-3"><dt class="text-gray-500">Veículo</dt><dd id="v-carro" class="font-semibold text-right">--</dd></div>
+              <div class="py-2 flex justify-between gap-3"><dt class="text-gray-500">Emitido em</dt><dd id="v-emit" class="font-semibold text-right">--</dd></div>
+              <div class="py-2 flex justify-between gap-3"><dt class="text-gray-500">Liberação</dt><dd id="v-lib" class="font-semibold text-right">--</dd></div>
+            </dl>
+          </div>
+
+          <div id="v-error" class="hidden py-8 text-center">
+            <svg class="w-10 h-10 mx-auto mb-2 text-red-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            <p id="v-error-msg" class="text-sm font-semibold text-gray-700">Ordem não encontrada.</p>
+            <p class="text-xs text-gray-500 mt-1">Confira o número e tente novamente.</p>
+          </div>
+        </div>
+      </div>
+      <p class="text-center text-xs text-gray-400 mt-4">CODEBA · Porto de Ilhéus — documento digital verificável</p>
+    </div>
+  </div>
+
+  <script src="assets/js/config.js"></script>
+  <script>
+    var _cfg = (window.CODEBA_CONFIG) || {};
+    var supa = null;
+    if (_cfg.SUPABASE_URL && _cfg.SUPABASE_KEY) {
+      supa = window.supabase.createClient(_cfg.SUPABASE_URL, _cfg.SUPABASE_KEY);
+    }
+
+    function txt(id, v) {
+      document.getElementById(id).textContent = v || '--';
+    }
+
+    function badge(status) {
+      var el = document.getElementById('v-status');
+      if (String(status).toLowerCase().indexOf('liberado') >= 0) {
+        el.innerHTML = '<span class="badge-done">Liberado na portaria</span>';
+      } else {
+        el.innerHTML = '<span class="badge-pending">Aguardando portaria</span>';
+      }
+    }
+
+    function mostrar(id) {
+      ['v-search', 'v-loading', 'v-result', 'v-error'].forEach(function(k) {
+        document.getElementById(k).classList.toggle('hidden', k !== id);
+      });
+    }
+
+    async function verificar(numOS) {
+      numOS = String(numOS || '').trim();
+      if (!numOS) { mostrar('v-search'); return; }
+      if (!supa) {
+        document.getElementById('v-error-msg').textContent = 'Verificação indisponível no momento.';
+        mostrar('v-error');
+        return;
+      }
+      mostrar('v-loading');
+      try {
+        var res = await supa.rpc('verificar_os', { p_num: numOS });
+        if (res.error) throw res.error;
+        var o = res.data;
+        if (!o || !o.num_carga) {
+          document.getElementById('v-error-msg').textContent = 'Ordem ' + numOS + ' não encontrada.';
+          mostrar('v-error');
+          return;
+        }
+        txt('v-num', o.num_carga);
+        badge(o.status);
+        txt('v-consig', o.consignatario);
+        txt('v-placa', o.placa);
+        txt('v-mot', o.motorista);
+        txt('v-carro', o.carro);
+        txt('v-emit', o.emitido_em);
+        txt('v-lib', o.liberado_em ? (o.liberado_em + (o.agente_nome ? ' · ' + o.agente_nome : '')) : 'Aguardando validação');
+        mostrar('v-result');
+      } catch (e) {
+        console.error('verificar_os:', e);
+        document.getElementById('v-error-msg').textContent = 'Falha ao consultar. Tente novamente.';
+        mostrar('v-error');
+      }
+    }
+
+    function verificarDigitada() {
+      verificar(document.getElementById('v-input').value);
+    }
+
+    (function init() {
+      var params = new URLSearchParams(window.location.search);
+      verificar(params.get('os'));
+    })();
+  </script>
+</body>
+</html>

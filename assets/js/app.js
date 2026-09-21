@@ -30,21 +30,23 @@ const DEFAULT_USERS = [
 let S = {
   navios:[], consig:[], mercs:[], lotes:[], tiposVeiculo:[],
   orders:[], rowId:0, quickType:null, portariaTarget:null,
-  users:[], currentUser:null
+  users:[], currentUser:null, pendentes:[]
 };
 
 const LS = {
   NAVIOS:'codeba_navios', CONSIG:'codeba_consig',
   MERCS:'codeba_mercs',   LOTES:'codeba_lotes',
   ORDERS:'codeba_orders',
-  VEICULOS:'codeba_veiculos', USERS:'codeba_users',   SESSION:'codeba_session'
+  VEICULOS:'codeba_veiculos', USERS:'codeba_users',   SESSION:'codeba_session',
+  PENDENTES:'codeba_sync_pendentes'
 };
 
 function saveLS(key) {
   const m = {
     navios:LS.NAVIOS, consig:LS.CONSIG, mercs:LS.MERCS,
     lotes:LS.LOTES,   orders:LS.ORDERS,
-    tiposVeiculo:LS.VEICULOS, users:LS.USERS, currentUser:LS.SESSION
+    tiposVeiculo:LS.VEICULOS, users:LS.USERS, currentUser:LS.SESSION,
+    pendentes:LS.PENDENTES
   };
   localStorage.setItem(m[key], JSON.stringify(S[key]));
 }
@@ -78,6 +80,7 @@ async function init() {
     carregarOrdensDoBanco().then(function() {
       ativarRealtimeOrdens();
       descarregarFilaAuditoria();
+      sincronizarPendentes(true);
     });
   } else {
     // Sem sessao salva - mostra tela de login
@@ -175,6 +178,87 @@ async function carregarOrdensDoBanco() {
 async function carregarDoSupabase() {
   await carregarOrdensDoBanco();
   ativarRealtimeOrdens();
+}
+
+// ─── FILA DE SINCRONIZAÇÃO (ordens "só locais") ───────────────────────────
+// Se o INSERT falha (sem internet, 400 transitório...), o nº da OS entra em
+// S.pendentes e é retentado em: login, restauração de sessão, volta da
+// internet e a cada novo salvamento. Conflito 23505 (já existe no banco,
+// ex.: a resposta se perdeu mas o insert passou) conta como sincronizado.
+function marcarPendente(numCarga) {
+  if (!numCarga) return;
+  S.pendentes = S.pendentes || [];
+  if (S.pendentes.indexOf(numCarga) < 0) {
+    S.pendentes.push(numCarga);
+    saveLS('pendentes');
+  }
+}
+
+function desmarcarPendente(numCarga) {
+  if (!numCarga || !S.pendentes) return;
+  var i = S.pendentes.indexOf(numCarga);
+  if (i >= 0) {
+    S.pendentes.splice(i, 1);
+    saveLS('pendentes');
+  }
+}
+
+function ehPendente(numCarga) {
+  return !!numCarga && !!S.pendentes && S.pendentes.indexOf(numCarga) >= 0;
+}
+
+// Selo "só local" exibido nas listagens para ordens fora do banco.
+function marcaSync(numCarga) {
+  if (!ehPendente(numCarga)) return '';
+  return '<span class="ml-1 inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-100 border border-dashed border-amber-400 px-1.5 py-0.5 rounded-full" title="Ainda não sincronizou com o banco (visível só neste aparelho)">só local</span>';
+}
+
+var _sincronizando = false;
+
+async function sincronizarPendentes(silencioso) {
+  if (_sincronizando) return;
+  if (!S.pendentes || !S.pendentes.length) return;
+  if (!S.currentUser) return;
+  _sincronizando = true;
+  try {
+    var antes = S.pendentes.length;
+    var restantes = [];
+    for (var i = 0; i < S.pendentes.length; i++) {
+      var num = S.pendentes[i];
+      var ordem = null;
+      for (var k = 0; k < S.orders.length; k++) {
+        if (S.orders[k].numCarga === num) { ordem = S.orders[k]; break; }
+      }
+      if (!ordem) continue; // ordem sumiu localmente: descarta da fila
+      try {
+        var res = await supabaseClient.from('ordens').insert([orderToDbRow(ordem)]);
+        if (res.error) {
+          if (res.error.code === '23505') {
+            // Já existe no banco (resposta anterior se perdeu): ok.
+          } else {
+            restantes.push(num);
+            continue;
+          }
+        }
+      } catch(e) {
+        restantes.push(num);
+      }
+    }
+    S.pendentes = restantes;
+    saveLS('pendentes');
+    var feitas = antes - restantes.length;
+    if (feitas > 0) {
+      updateBadge();
+      updatePortariaBadge();
+      renderPortaria();
+      if (!silencioso) toast(feitas + ' ordem(ns) pendente(s) sincronizada(s)!', 'success');
+    }
+    if (!silencioso && restantes.length > 0) {
+      toast(restantes.length + ' ordem(ns) ainda sem sincronizar.', 'warning');
+    }
+  } finally {
+    _sincronizando = false;
+  }
 }
 
 // ─── SUPABASE: Realtime – sincronizacao entre navegadores ────────────────────
@@ -326,6 +410,7 @@ function loadAll() {
   S.mercs        = JSON.parse(localStorage.getItem(LS.MERCS)    || '[]');
   S.lotes        = JSON.parse(localStorage.getItem(LS.LOTES)    || '[]');
   S.orders       = JSON.parse(localStorage.getItem(LS.ORDERS)   || '[]');
+  S.pendentes    = JSON.parse(localStorage.getItem(LS.PENDENTES) || '[]');
   S.tiposVeiculo = JSON.parse(localStorage.getItem(LS.VEICULOS) || 'null');
   
   if (!S.tiposVeiculo || S.tiposVeiculo.length === 0) {
@@ -381,6 +466,7 @@ async function autenticarUsuario() {
       await carregarDoSupabase();
     }
     descarregarFilaAuditoria();
+    sincronizarPendentes(true);
 
     toast('Login realizado com sucesso!', 'success');
   } catch (err) {
@@ -444,6 +530,9 @@ function montarSessao(authUser, perfil) {
 supabaseClient.auth.onAuthStateChange(function(event){
   if (event === 'SIGNED_OUT' && S.currentUser) logoutUser();
 });
+
+// Internet de volta: tenta descarregar ordens "só locais".
+window.addEventListener('online', function(){ sincronizarPendentes(true); });
 
 // RestaurarSessao: Ajusta a interface do usuário logado
 function restaurarSessao(usuario) {
@@ -1081,11 +1170,17 @@ async function saveOrder() {
       .insert([orderToDbRow(d)]);
     if (error) {
       console.error('Erro ao salvar ordem no Supabase:', resumirErroPostgrest(error));
+      marcarPendente(d.numCarga);
       toast('Salvo localmente. Falha ao sincronizar com banco.', 'warning');
+    } else {
+      desmarcarPendente(d.numCarga);
     }
   } catch(err) {
     console.error('Excecao ao salvar no Supabase:', err);
+    marcarPendente(d.numCarga);
   }
+  // Aproveita a conexão (se voltou) para descarregar a fila de pendentes.
+  sincronizarPendentes(true);
   } finally {
     _salvando = false;
   }
@@ -1192,18 +1287,28 @@ function printSecaoAutenticacao(d) {
         '</div>',
         '<div class="pauth-qr">',
           '<div id="print-qr" style="width:64pt;height:64pt"></div>',
-          '<p style="font-size:6pt;color:#888;margin-top:2pt;text-align:center">Autenticidade</p>',
+          '<p style="font-size:6pt;color:#888;margin-top:2pt;text-align:center">Escaneie para verificar</p>',
         '</div>',
       '</div>',
     '</div>'
   ].join('');
 }
 
+// URL pública de conferência da OS (lida pelo QR). Monta a partir do
+// endereço atual para funcionar no GitHub Pages, em outro host ou local.
+function urlVerificacaoOS(numCarga) {
+  try {
+    var base = String(window.location.href).split('?')[0].split('#')[0];
+    base = base.substring(0, base.lastIndexOf('/') + 1);
+    return base + 'verificar.html?os=' + encodeURIComponent(numCarga || '');
+  } catch(e) {
+    return 'verificar.html?os=' + encodeURIComponent(numCarga || '');
+  }
+}
+
 function renderQrPrint(d) {
-  // Normaliza para ASCII (remove acentos): elimina a única variável de
-  // conteúdo entre OSs e garante leitura em qualquer scanner.
-  var qrStr = ('CODEBA|'+d.numCarga+'|'+d.consignatario+'|'+d.placa+'|'+d.responsavel+'|'+d.emitidoEm)
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  // O QR abre a página pública de conferência da OS (verificar.html).
+  var qrStr = urlVerificacaoOS(d.numCarga);
   var box = g('print-qr');
   if (!box) return;
   box.innerHTML = '';
@@ -1347,7 +1452,7 @@ function linhaOrdemPendente(o) {
     '<td class="px-4 py-3 text-sm text-gray-700">'+x(o.motorista)+'</td>' +
     '<td class="px-4 py-3 text-sm text-gray-600">'+(x(o.carro)||'--')+'</td>' +
     '<td class="px-4 py-3 text-xs text-gray-500">'+x(o.emitidoEm)+'</td>' +
-    '<td class="px-4 py-3">' + badgeStatus(o.status) + '</td>' +
+    '<td class="px-4 py-3">' + badgeStatus(o.status) + marcaSync(o.numCarga) + '</td>' +
     '<td class="px-4 py-3 text-center">' + botaoConfirmarSaida(o) + '</td>' +
     '<td class="px-4 py-3 text-center">' + botaoExcluirOrdem(o.numCarga) + '</td>' +
     '</tr>';
@@ -1518,7 +1623,7 @@ function openHistoryModal() {
           '<p class="text-xs text-gray-500 truncate">'+x(o.consignatario)+' - Placa: '+x(o.placa)+'</p>' +
         '</div>' +
         '<div class="text-right flex flex-col items-end gap-1">' +
-          statusBadge +
+          statusBadge + marcaSync(o.numCarga) +
           '<p class="text-xs text-gray-400">'+x(o.emitidoEm)+'</p>' +
           '<p class="text-xs text-blue-500 opacity-0 group-hover:opacity-100 transition font-medium">Reabrir</p>' +
         '</div>' +
@@ -1972,7 +2077,7 @@ function linhaOrdemRelatorio(l) {
     '<td class="px-4 py-2.5 text-sm text-gray-700">'            + x(o.consignatario) + '</td>' +
     '<td class="px-4 py-2.5 font-mono text-sm font-semibold">'  + x(o.placa) + '</td>' +
     '<td class="px-4 py-2.5 text-sm text-gray-700">'            + x(o.motorista) + '</td>' +
-    '<td class="px-4 py-2.5">'                                   + badgeStatus(o.status) + '</td>' +
+    '<td class="px-4 py-2.5">'                                   + badgeStatus(o.status) + marcaSync(o.numCarga) + '</td>' +
     '<td class="px-4 py-2.5 text-right text-sm font-semibold text-gray-700">' + l.qtd.toLocaleString('pt-BR') + '</td>' +
     '<td class="px-4 py-2.5 text-right text-sm font-semibold text-gray-700">' + l.peso.toLocaleString('pt-BR',{minimumFractionDigits:3}) + '</td>' +
     '<td class="px-4 py-2.5 text-right text-sm font-semibold text-gray-700">R$ ' + l.valor.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td>' +

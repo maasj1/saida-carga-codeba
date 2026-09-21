@@ -194,6 +194,30 @@ RETURNS INT LANGUAGE SQL AS $$ SELECT nextval('public.os_num_seq')::int; $$;
 GRANT USAGE, SELECT ON SEQUENCE public.os_num_seq TO authenticated;
 GRANT EXECUTE ON FUNCTION public.next_os_num() TO authenticated;
 
+-- ── 6b. VERIFICAÇÃO PÚBLICA DA OS (QR → verificar.html) ─────────────
+-- RPC com SECURITY DEFINER que expõe SOMENTE campos não sensíveis
+-- (nunca documento/CNH/CPF nem observações internas). Leitura anônima.
+CREATE OR REPLACE FUNCTION public.verificar_os(p_num TEXT)
+RETURNS JSONB LANGUAGE SQL SECURITY DEFINER SET search_path = public AS $$
+  SELECT jsonb_build_object(
+    'num_carga',     o.num_carga,
+    'status',        o.status,
+    'consignatario', o.consignatario,
+    'placa',         o.placa,
+    'motorista',     o.motorista,
+    'carro',         o.carro,
+    'data_descarga', o.data_descarga,
+    'tipo_carga',    o.tipo_carga,
+    'emitido_em',    o.emitido_em,
+    'liberado_em',   o.liberado_em,
+    'agente_nome',   o.agente_nome
+  )
+  FROM public.ordens o
+  WHERE o.num_carga = p_num
+  LIMIT 1;
+$$;
+GRANT EXECUTE ON FUNCTION public.verificar_os(TEXT) TO anon, authenticated;
+
 -- ── 7. RECARREGA O CACHE DO POSTGREST (obrigatório após ALTER TABLE) ─
 NOTIFY pgrst, 'reload schema';
 
