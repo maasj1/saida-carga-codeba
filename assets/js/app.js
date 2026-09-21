@@ -1294,16 +1294,15 @@ function printSecaoAutenticacao(d) {
   ].join('');
 }
 
-// URL pública de conferência da OS (lida pelo QR). Monta a partir do
-// endereço atual para funcionar no GitHub Pages, em outro host ou local.
+// Base pública do sistema (GitHub Pages). O QR impresso precisa funcionar em
+// qualquer celular, então usa sempre o endereço canônico — nunca o endereço
+// local de onde se imprimiu (file://, localhost...). Se a hospedagem mudar,
+// atualize esta constante.
+var BASE_URL_VERIFICACAO = 'https://maasj1.github.io/saida-carga-codeba/';
+
+// URL pública de conferência da OS (lida pelo QR).
 function urlVerificacaoOS(numCarga) {
-  try {
-    var base = String(window.location.href).split('?')[0].split('#')[0];
-    base = base.substring(0, base.lastIndexOf('/') + 1);
-    return base + 'verificar.html?os=' + encodeURIComponent(numCarga || '');
-  } catch(e) {
-    return 'verificar.html?os=' + encodeURIComponent(numCarga || '');
-  }
+  return BASE_URL_VERIFICACAO + 'verificar.html?os=' + encodeURIComponent(numCarga || '');
 }
 
 function renderQrPrint(d) {
