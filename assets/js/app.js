@@ -17,13 +17,13 @@
     );
   
 
-const DEFAULT_VEICULOS = ['Caminhao Bau','Carreta','Bitrem','Fiorino','Caminhonete','Van','Caminhao Truck','Toco'];
+const DEFAULT_VEICULOS = ['Caminhão Baú','Carreta','Bitrem','Fiorino','Caminhonete','Van','Caminhão Truck','Toco'];
 // Usuários iniciais da aba Usuários (cadastro local de nome/perfil).
 // ATENÇÃO: o campo senha aqui NÃO vale para o login — o acesso é criado
 // no Supabase Auth (Authentication → Users) e vinculado por login.
 const DEFAULT_USERS = [
   {nome: 'Administrador', login: 'admin', senha: '', perfil: 'Administrador'},
-  {nome: 'Fiel de Armazem', login: 'fiel', senha: '', perfil: 'Emissor (Fiel/Tecnico)'},
+  {nome: 'Fiel de Armazém', login: 'fiel', senha: '', perfil: 'Emissor (Fiel/Técnico)'},
   {nome: 'Agente Silva', login: 'portaria', senha: '', perfil: 'Agente de Portaria'}
 ];
 
@@ -316,6 +316,13 @@ function exibirAbas(botoes, abaInicial) {
   if (abaInicial && typeof switchTab === 'function') switchTab(abaInicial);
 }
 
+// Normaliza texto para comparação (minúsculas, sem acentos): 'Técnico' e
+// 'Tecnico' passam a equivaler — permite exibir nomes com acento sem quebrar
+// as checagens de perfil/status.
+function norm(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 function aplicarPermissoesPorPerfil(perfilUsuario) {
   // Referencia os botoes de aba pelo ID correto
   const btnEmitir    = document.getElementById('tab-emit');
@@ -331,8 +338,8 @@ function aplicarPermissoesPorPerfil(perfilUsuario) {
     if (el) { el.style.setProperty('display', 'none', 'important'); el.classList.add('hidden'); }
   });
 
-  // Normaliza o perfil para comparacao case-insensitive
-  const perfil = (perfilUsuario || '').toLowerCase().trim();
+  // Normaliza o perfil para comparacao (minúsculas, sem acentos)
+  const perfil = norm(perfilUsuario).trim();
 
   if (perfil.includes('portaria')) {
     exibirAbas([btnPortaria, btnSobre], 'portaria'); // Agente: só Portaria e Ajuda
@@ -429,7 +436,7 @@ async function autenticarUsuario() {
   var u = tr(g('login-username').value);
   var p = g('login-password').value;
   if (!u || !p) {
-    toast('Preencha usuario e senha.', 'warning');
+    toast('Preencha usuário e senha.', 'warning');
     return;
   }
 
@@ -444,7 +451,7 @@ async function autenticarUsuario() {
       if (error && /confirm/i.test(error.message || '')) {
         toast('Conta ainda não confirmada. Recrie o usuário marcando Auto Confirm.', 'error');
       } else {
-        toast('Usuario ou senha incorretos.', 'error');
+        toast('Usuário ou senha incorretos.', 'error');
       }
       return;
     }
@@ -731,7 +738,7 @@ function setToday() {
 
 function setCidadeDefault() {
   const el = document.getElementById('f-cidade');
-  if (el && !el.value) el.value = 'Ilheus - BA';
+  if (el && !el.value) el.value = 'Ilhéus - BA';
 }
 
 function refreshAll() {
@@ -800,9 +807,9 @@ function renderList(ulId, arr, type, rowFn) {
 function addCadastro(type) {
   var m = {
     navio:         { input:'input-navio',    arr:'navios',       label:'Navio' },
-    consignatario: { input:'input-consig',   arr:'consig',       label:'Consignatario' },
+    consignatario: { input:'input-consig',   arr:'consig',       label:'Consignatário' },
     lote:          { input:'input-lote',     arr:'lotes',        label:'Lote' },
-    veiculo:       { input:'input-veiculo',  arr:'tiposVeiculo', label:'Tipo de Veiculo' },
+    veiculo:       { input:'input-veiculo',  arr:'tiposVeiculo', label:'Tipo de Veículo' },
   };
 
   if (type === 'mercadoria') {
@@ -822,7 +829,7 @@ function addCadastro(type) {
   if (!v) { toast('Digite o nome do(a) '+cfg.label+'.','warning'); return; }
 
   var arr = S[cfg.arr];
-  if (arr.indexOf(v) >= 0) { toast(cfg.label+' ja cadastrado(a)!','info'); return; }
+  if (arr.indexOf(v) >= 0) { toast(cfg.label+' já cadastrado(a)!','info'); return; }
   arr.push(v);
   saveLS(cfg.arr);
   document.getElementById(cfg.input).value = '';
@@ -872,9 +879,9 @@ function addUser() {
   var l = tr(g('u-login').value).toLowerCase();
   var p = g('u-perfil').value;
 
-  if(!n || !l) { toast('Preencha Nome e Login!','warning'); return; }
+  if (!n || !l) { toast('Preencha Nome e Login!','warning'); return; }
   var dup = S.users.find(function(u){ return (u.login||'').toLowerCase() === l; });
-  if (dup) { toast('Login ja existe!','error'); return; }
+  if (dup) { toast('Login já existe!','error'); return; }
 
   // Sem senha aqui: o acesso é criado no Supabase Auth (login@codeba.local)
   S.users.push({nome:n, login:l, perfil:p});
@@ -883,30 +890,30 @@ function addUser() {
 
   g('u-nome').value = ''; g('u-login').value = '';
   renderUsers();
-  toast('Usuario cadastrado! Crie o acesso dele no Supabase Auth.','success');
+  toast('Usuário cadastrado! Crie o acesso dele no Supabase Auth.','success');
 }
 
 function removeUser(i) {
-  if (S.users[i].login === 'admin') { toast('O Administrador padrao nao pode ser removido.','error'); return; }
-  if (S.users[i].login === S.currentUser.login) { toast('Voce nao pode remover si proprio.','error'); return; }
-  if (!confirm('Remover o usuario ' + S.users[i].nome + '?')) return;
+  if (S.users[i].login === 'admin') { toast('O Administrador padrão não pode ser removido.','error'); return; }
+  if (S.users[i].login === S.currentUser.login) { toast('Você não pode remover si próprio.','error'); return; }
+  if (!confirm('Remover o usuário ' + S.users[i].nome + '?')) return;
 
   registrarAuditoria('USUARIO_REMOVIDO', 'usuario', S.users[i].login, { nome: S.users[i].nome, perfil: S.users[i].perfil });
   S.users.splice(i,1);
   saveLS('users');
   renderUsers();
-  toast('Usuario removido.','info');
+  toast('Usuário removido.','info');
 }
 
 function openQuickModal(type) {
   S.quickType = type;
-  var labels = {navio:'Navio', consignatario:'Consignatario'};
-  document.getElementById('quick-modal-title').textContent = 'Cadastro Rapido - '+(labels[type]||type);
+  var labels = {navio:'Navio', consignatario:'Consignatário'};
+  document.getElementById('quick-modal-title').textContent = 'Cadastro Rápido - '+(labels[type]||type);
   document.getElementById('quick-input').value = '';
   document.getElementById('quick-modal-hint').textContent =
     type === 'navio'
-      ? 'Informe o nome completo do navio. Ele sera adicionado a lista e selecionado automaticamente.'
-      : 'Informe o nome completo do consignatario. Ele sera adicionado e selecionado automaticamente.';
+      ? 'Informe o nome completo do navio. Ele será adicionado à lista e selecionado automaticamente.'
+      : 'Informe o nome completo do consignatário. Ele será adicionado e selecionado automaticamente.';
   document.getElementById('quick-modal').classList.remove('hidden');
   setTimeout(function(){ document.getElementById('quick-input').focus(); }, 60);
 }
@@ -918,7 +925,7 @@ function closeQuickModal() {
 
 function saveQuick() {
   var v = tr(document.getElementById('quick-input').value);
-  if (!v) { toast('Campo nao pode ser vazio.','warning'); return; }
+  if (!v) { toast('Campo não pode ser vazio.','warning'); return; }
   if (S.quickType === 'navio') {
     if (S.navios.indexOf(v) < 0) { S.navios.push(v); saveLS('navios'); }
     document.getElementById('f-navio').value = v;
@@ -940,7 +947,7 @@ function addItemRow(d) {
   row.dataset.rid = id;
   row.innerHTML =
     '<td class="px-3 py-2"><input type="text" list="merc-dl" placeholder="' + ((S.tipoCarga === 'material') ? 'Material' : 'Mercadoria') + '" value="'+x(d.merc||'')+'" class="cell-input w-full" /></td>' +
-    '<td class="px-3 py-2"><input type="text" placeholder="Codigo" value="'+x(d.codigo||'')+'" class="cell-input w-24 font-mono" /></td>' +
+    '<td class="px-3 py-2"><input type="text" placeholder="Código" value="'+x(d.codigo||'')+'" class="cell-input w-24 font-mono" /></td>' +
     '<td class="px-3 py-2"><input type="text" placeholder="Caixa, Saco..." value="'+x(d.emb||'')+'" class="cell-input w-24" /></td>' +
     '<td class="px-3 py-2"><input type="number" min="0" step="1" placeholder="0" value="'+(d.qtd||'')+'" class="cell-input w-16 text-right qty-i" /></td>' +
     '<td class="px-3 py-2"><input type="number" min="0" step="0.001" placeholder="0,000" value="'+(d.pesoUnit||'')+'" class="cell-input w-24 text-right unit-i" /></td>' +
@@ -1062,16 +1069,16 @@ function formatarPlaca(el) {
 
 function validate(d) {
   var req = [
-    {k:'portao',       l:'Portao N',              id:'f-portao'},
+    {k:'portao',       l:'Portão Nº',            id:'f-portao'},
     {k:'armazem',      l:'Local de Armazenagem',   id:'f-armazem'},
     {k:'tipoEmissor',  l:'Tipo de Emissor',        id:'f-tipo-emissor'},
-    {k:'consignatario',l:'Consignatario',          id:'f-consignatario'},
-    {k:'carro',        l:'Carro / Tipo de Veiculo',id:'f-carro'},
+    {k:'consignatario',l:'Consignatário',          id:'f-consignatario'},
+    {k:'carro',        l:'Carro / Tipo de Veículo',id:'f-carro'},
     {k:'placa',        l:'Placa',                  id:'f-placa'},
     {k:'motorista',    l:'Motorista',              id:'f-motorista'},
-    {k:'documento',    l:'Prontuario / CNH / CPF', id:'f-documento'},
+    {k:'documento',    l:'Prontuário / CNH / CPF', id:'f-documento'},
     {k:'dataDescarga', l:'Data Descarga',          id:'f-data-descarga'},
-    {k:'responsavel',  l:'Responsavel pela Emissao',id:'f-responsavel'},
+    {k:'responsavel',  l:'Responsável pela Emissão',id:'f-responsavel'},
   ];
   for (var i=0;i<req.length;i++) {
     var r = req[i];
@@ -1161,7 +1168,7 @@ async function saveOrder() {
   aplicarIdentidadeUsuario();
   setTipoCarga('mercadoria');
 
-  toast('Ordem ' + d.numCarga + ' salva com sucesso! Aguardando portaria.','success');
+  toast('Ordem ' + d.numCarga + ' salva com sucesso! Aguardando Portaria.','success');
 
   // Envia para o Supabase (Realtime notificara os outros navegadores)
   try {
@@ -1225,9 +1232,9 @@ function printContainerSec(d) {
   return [
     '<div class="psec">Container</div>',
     '<div class="pgrid pg3">',
-    '<div class="pf"><label>Sigla / Numero</label><span>'+(x(d.containerNum)||'--')+'</span></div>',
+    '<div class="pf"><label>Sigla / Número</label><span>'+(x(d.containerNum)||'--')+'</span></div>',
     '<div class="pf"><label>Tara (kg)</label><span>'+(x(d.containerTara)||'--')+'</span></div>',
-    '<div class="pf"><label>Codigo</label><span>'+(x(d.containerCod)||'--')+'</span></div>',
+    '<div class="pf"><label>Código</label><span>'+(x(d.containerCod)||'--')+'</span></div>',
     '</div><div class="pdiv"></div>'
   ].join('');
 }
@@ -1235,7 +1242,7 @@ function printContainerSec(d) {
 function printObsSec(d) {
   if (!d.obs) return '';
   return [
-    '<div class="psec">Observacoes</div>',
+    '<div class="psec">Observações</div>',
     '<div style="font-size:9pt;border:.5pt solid #ccc;border-radius:3pt;padding:5pt;min-height:20pt;margin-bottom:4pt">'+x(d.obs)+'</div>'
   ].join('');
 }
@@ -1243,7 +1250,7 @@ function printObsSec(d) {
 function printValidacaoLine(d) {
   return (d.status === STATUS.LIBERADO && d.liberadoEm)
     ? 'Liberado na Portaria por <strong>'+x(d.agenteName)+'</strong> em <strong>'+x(d.liberadoEm)+'</strong>'
-    : '<span style="color:#b45309">Aguardando Validacao da Portaria</span>';
+    : '<span style="color:#b45309">Aguardando Validação da Portaria</span>';
 }
 
 function printSecaoItens(d, iRows, tPeso, tValor) {
@@ -1254,7 +1261,7 @@ function printSecaoItens(d, iRows, tPeso, tValor) {
       '<thead><tr>',
         '<th style="width:18pt">#</th>',
         '<th>' + nomeItem + '</th>',
-        '<th style="width:50pt">Codigo</th>',
+        '<th style="width:50pt">Código</th>',
         '<th style="width:48pt">Embalagem</th>',
         '<th style="width:28pt;text-align:right">Qtd.</th>',
         '<th style="width:52pt;text-align:right">Peso Unit.</th>',
@@ -1281,9 +1288,9 @@ function printSecaoAutenticacao(d) {
       '<div class="pauth-title">Autenticacao Digital e Auditoria</div>',
       '<div class="pauth-body">',
         '<div class="pauth-info">',
-          '<div class="pauth-row"><strong>Emissao:</strong> Emitido eletronicamente por <strong>'+x(d.responsavel)+'</strong> em <strong>'+x(d.emitidoEm)+'</strong></div>',
-          '<div class="pauth-row" style="margin-top:6pt"><strong>Validacao Portaria:</strong> '+printValidacaoLine(d)+'</div>',
-          '<div style="margin-top:10pt;font-size:7pt;color:#888;border-top:.5pt solid #ccc;padding-top:4pt">Documento digital emitido via Sistema de Controle de Saida - CODEBA</div>',
+          '<div class="pauth-row"><strong>Emissão:</strong> Emitido eletronicamente por <strong>'+x(d.responsavel)+'</strong> em <strong>'+x(d.emitidoEm)+'</strong></div>',
+          '<div class="pauth-row" style="margin-top:6pt"><strong>Validação Portaria:</strong> '+printValidacaoLine(d)+'</div>',
+          '<div style="margin-top:10pt;font-size:7pt;color:#888;border-top:.5pt solid #ccc;padding-top:4pt">Documento digital emitido via Sistema de Controle de Saída - CODEBA</div>',
         '</div>',
         '<div class="pauth-qr">',
           '<div id="print-qr" style="width:64pt;height:64pt"></div>',
@@ -1312,7 +1319,7 @@ function renderQrPrint(d) {
   if (!box) return;
   box.innerHTML = '';
   try {
-    if (typeof QRCode === 'undefined') throw new Error('lib qrcodejs nao carregada');
+    if (typeof QRCode === 'undefined') throw new Error('lib qrcodejs não carregada');
     // Gera num nó temporário e congela como imagem data-URL: <img> embutida
     // imprime com fidelidade, sem depender do timing canvas→img da lib nem do
     // elemento estar visível na tela (o documento de impressão é display:none).
@@ -1362,28 +1369,28 @@ function buildPrint(d) {
 
     '<div class="psec">Identificacao</div>',
     '<div class="pgrid pg4">',
-      '<div class="pf"><label>Portao N</label><span>'+x(d.portao)+'</span></div>',
+      '<div class="pf"><label>Portão N</label><span>'+x(d.portao)+'</span></div>',
       '<div class="pf"><label>Local de Armazenagem</label><span>'+x(d.armazem)+'</span></div>',
       '<div class="pf"><label>Tipo Emissor</label><span>'+x(d.tipoEmissor)+'</span></div>',
-      '<div class="pf"><label>Responsavel</label><span>'+x(d.responsavel)+'</span></div>',
+      '<div class="pf"><label>Responsável</label><span>'+x(d.responsavel)+'</span></div>',
     '</div>',
     '<div class="pdiv"></div>',
 
     '<div class="psec">Dados da Carga</div>',
     '<div class="pgrid pg3">',
-      '<div class="pf"><label>Consignatario</label><span>'+x(d.consignatario)+'</span></div>',
+      '<div class="pf"><label>Consignatário</label><span>'+x(d.consignatario)+'</span></div>',
       navioLine,
-      '<div class="pf"><label>Carro / Tipo de Veiculo</label><span>'+(x(d.carro)||'--')+'</span></div>',
+      '<div class="pf"><label>Carro / Tipo de Veículo</label><span>'+(x(d.carro)||'--')+'</span></div>',
     '</div>',
     '<div class="pgrid pg4" style="margin-top:4pt">',
       '<div class="pf"><label>Placa</label><span style="font-family:monospace;letter-spacing:1pt">'+x(d.placa)+'</span></div>',
       '<div class="pf"><label>Motorista</label><span>'+x(d.motorista)+'</span></div>',
-      '<div class="pf"><label>Prontuario/CNH/CPF</label><span>'+x(d.documento)+'</span></div>',
+      '<div class="pf"><label>Prontuário/CNH/CPF</label><span>'+x(d.documento)+'</span></div>',
       '<div class="pf"><label>Data Descarga</label><span>'+fd(d.dataDescarga)+'</span></div>',
     '</div>',
     '<div class="pgrid pg2" style="margin-top:4pt">',
-      '<div class="pf"><label>Doc. Importacao (DI/BL)</label><span>'+(x(d.docImportacao)||'--')+'</span></div>',
-      '<div class="pf"><label>Cidade / Estado</label><span>'+(x(d.cidade)||'Ilheus - BA')+'</span></div>',
+      '<div class="pf"><label>Doc. Importação (DI/BL)</label><span>'+(x(d.docImportacao)||'--')+'</span></div>',
+      '<div class="pf"><label>Cidade / Estado</label><span>'+(x(d.cidade)||'Ilhéus - BA')+'</span></div>',
     '</div>',
     '<div class="pdiv"></div>',
 
@@ -1401,7 +1408,7 @@ function buildPrint(d) {
 
 // Perfil do usuário logado em minúsculas (comparação case-insensitive).
 function perfilAtual() {
-  return (S.currentUser && S.currentUser.perfil || '').toLowerCase();
+  return norm(S.currentUser && S.currentUser.perfil);
 }
 
 function podeLiberarSaida() {
@@ -1431,7 +1438,7 @@ function botaoConfirmarSaida(o) {
   return '<button onclick="openPortariaModal(\''+x(o.numCarga)+'\')"' +
     ' class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition mx-auto">' +
     '<svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' +
-    'Confirmar Saida</button>';
+    'Confirmar Saída</button>';
 }
 
 function botaoExcluirOrdem(numCarga) {
@@ -1493,7 +1500,7 @@ function updatePortariaBadge() {
   if (!b) return;
   b.textContent = n;
   b.classList.toggle('hidden', n === 0);
-  // Tambem atualiza o badge de historico
+  // Tambem atualiza o badge de histórico
   updateBadge();
 }
 
@@ -1507,7 +1514,7 @@ function openPortariaModal(numCarga) {
     '<div><span class="text-gray-500 text-xs uppercase font-semibold">OS</span><br/><strong class="text-navy-700">'+x(o.numCarga)+'</strong></div>' +
     '<div><span class="text-gray-500 text-xs uppercase font-semibold">Placa</span><br/><strong class="font-mono">'+x(o.placa)+'</strong></div>' +
     '<div><span class="text-gray-500 text-xs uppercase font-semibold">Motorista</span><br/>'+x(o.motorista)+'</div>' +
-    '<div><span class="text-gray-500 text-xs uppercase font-semibold">Veiculo</span><br/>'+(x(o.carro)||'--')+'</div>' +
+    '<div><span class="text-gray-500 text-xs uppercase font-semibold">Veículo</span><br/>'+(x(o.carro)||'--')+'</div>' +
     '</div>';
   aplicarIdentidadeUsuario(); // nome do agente já vem preenchido e travado
   g('portaria-modal').classList.remove('hidden');
@@ -1525,7 +1532,7 @@ async function confirmarSaidaExec() {
 
   var idx = -1;
   for(var i=0;i<S.orders.length;i++){ if(S.orders[i].numCarga === S.portariaTarget){ idx=i; break; } }
-  if (idx < 0) { toast('Ordem nao encontrada.','error'); return; }
+  if (idx < 0) { toast('Ordem não encontrada.','error'); return; }
 
   var liberadoEm = new Date().toLocaleString('pt-BR');
   var numCargaTarget = S.portariaTarget;
@@ -1539,7 +1546,7 @@ async function confirmarSaidaExec() {
   registrarAuditoria('SAIDA_LIBERADA', 'ordem', numCargaTarget, { agente: agente, liberadoEm: liberadoEm });
   closePortariaModal();
   renderPortaria();
-  toast('Saida confirmada! OS ' + numCargaTarget + ' liberada com sucesso.','success');
+  toast('Saída confirmada! OS ' + numCargaTarget + ' liberada com sucesso.','success');
 
   // Atualiza no Supabase (Realtime notificara os outros navegadores)
   try {
@@ -1565,7 +1572,7 @@ async function excluirOrdem(numCarga) {
     return;
   }
 
-  if (!confirm('Tem certeza que deseja EXCLUIR a ordem ' + numCarga + '? Esta acao nao pode ser desfeita.')) return;
+  if (!confirm('Tem certeza que deseja EXCLUIR a ordem ' + numCarga + '? Esta ação não pode ser desfeita.')) return;
 
   // Auditoria ANTES de remover (único rastro após o delete)
   (function(){
@@ -1585,7 +1592,7 @@ async function excluirOrdem(numCarga) {
   updateBadge();
   updatePortariaBadge();
   renderPortaria();
-  toast('Ordem ' + numCarga + ' excluida com sucesso.', 'success');
+  toast('Ordem ' + numCarga + ' excluída com sucesso.', 'success');
 
   // Exclui no Supabase
   try {
@@ -1650,7 +1657,7 @@ function reloadOrder(i) {
   fm('f-navio',o.navio); fm('f-placa',o.placa);
   fm('f-motorista',o.motorista); fm('f-documento',o.documento);
   fm('f-data-descarga',o.dataDescarga); fm('f-doc-importacao',o.docImportacao);
-  fm('f-cidade',o.cidade||'Ilheus - BA'); fm('f-container-num',o.containerNum);
+  fm('f-cidade',o.cidade||'Ilhéus - BA'); fm('f-container-num',o.containerNum);
   fm('f-container-tara',o.containerTara); fm('f-container-codigo',o.containerCod);
   fm('f-obs',o.obs); fm('f-responsavel',o.responsavel);
 
@@ -1660,13 +1667,13 @@ function reloadOrder(i) {
   (o.items||[]).forEach(function(it){ addItemRow(it); });
   calcTotals();
   setTipoCarga(o.tipoCarga || 'mercadoria');
-  toast('Ordem carregada para visualizacao/reimpressao.','info');
+  toast('Ordem carregada para visualização/reimpressão.','info');
 }
 
 function clearHistory() {
-  if (!confirm('Limpar todo o historico de ordens?')) return;
+  if (!confirm('Limpar todo o histórico de ordens?')) return;
   S.orders=[]; saveLS('orders'); updateBadge(); updatePortariaBadge(); closeHistoryModal();
-  toast('Historico limpo.','info');
+  toast('Histórico limpo.','info');
 }
 
 function updateBadge() {
@@ -1678,14 +1685,14 @@ function updateBadge() {
 }
 
 function clearForm() {
-  if (!confirm('Limpar o formulario? Dados nao salvos serao perdidos.')) return;
+  if (!confirm('Limpar o formulário? Dados não salvos serão perdidos.')) return;
   document.querySelectorAll('#pane-emit input:not([readonly]):not([disabled]),#pane-emit select:not([disabled]),#pane-emit textarea:not([readonly]):not([disabled])')
     .forEach(function(el){ el.value=''; });
   g('items-tbody').innerHTML=''; S.rowId=0;
   checkEmpty(); calcTotals(); setToday(); setCidadeDefault(); preReservarNumeroOS(); refreshCarroSelect();
   aplicarIdentidadeUsuario();
   setTipoCarga('mercadoria');
-  toast('Formulario limpo.','info');
+  toast('Formulário limpo.','info');
 }
 
 function toast(msg, type) {
@@ -2242,11 +2249,11 @@ async function desenharCabecalhoPDF(doc, pageW, R, PDF, agora) {
   doc.setTextColor.apply(doc, PDF.navy);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(13);
-  doc.text('Relatorio de Ordens de Saida de Carga', pageW - 14, 9, { align: 'right' });
+  doc.text('Relatório de Ordens de Saída de Carga', pageW - 14, 9, { align: 'right' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(80, 80, 80);
-  doc.text('CODEBA - Porto de Ilheus', pageW - 14, 14, { align: 'right' });
+  doc.text('CODEBA - Porto de Ilhéus', pageW - 14, 14, { align: 'right' });
   doc.setFontSize(8);
   doc.text('Emitido em: ' + emitidoEm + '   |   Total de ordens: ' + R.ordens.length, pageW - 14, 18, { align: 'right' });
 
@@ -2265,9 +2272,9 @@ function desenharResumoPDF(doc, pageW, R) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   var f = R.filtros;
-  var filtrosTxt = 'Consignatario: ' + (f.consignatarios.length ? f.consignatarios.join(', ') : 'Todos')
+  var filtrosTxt = 'Consignatário: ' + (f.consignatarios.length ? f.consignatarios.join(', ') : 'Todos')
     + '  |  Mercadoria: ' + (f.mercadorias.length ? f.mercadorias.join(', ') : 'Todas')
-    + '  |  Periodo: ' + (f.dataIni ? fd(f.dataIni) : '...') + ' a ' + (f.dataFim ? fd(f.dataFim) : '...')
+    + '  |  Período: ' + (f.dataIni ? fd(f.dataIni) : '...') + ' a ' + (f.dataFim ? fd(f.dataFim) : '...')
     + '  |  Status: ' + [(f.incPend ? 'Aguardando' : null), (f.incLib ? 'Liberado' : null)].filter(Boolean).join(' + ');
   var linhas = doc.splitTextToSize(filtrosTxt, pageW - 28);
   doc.text(linhas, 14, y + 5);
@@ -2291,7 +2298,7 @@ function tabelaOrdensPDF(doc, R, y, PDF, tableMargin) {
     startY: y,
     margin: tableMargin,
     tableWidth: 'auto',
-    head: [['N OS', 'Data Descarga', 'Consignatario', 'Placa', 'Motorista', 'Status', 'Qtd.', 'Peso (kg)', 'Valor (R$)']],
+    head: [['Nº OS', 'Data Descarga', 'Consignatário', 'Placa', 'Motorista', 'Status', 'Qtd.', 'Peso (kg)', 'Valor (R$)']],
     body: R.ordens.map(linhaOrdemPDF),
     foot: [[
       { content: 'TOTAIS GERAIS', colSpan: 6, styles: { halign: 'right', fontStyle: 'bold' } },
@@ -2357,7 +2364,7 @@ function desenharRodapePDF(doc, pageW, PDF) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     doc.setTextColor.apply(doc, PDF.cinza);
-    doc.text('CODEBA - Sistema de Ordem de Saida de Carga | Pagina ' + pg + ' de ' + totalPgs, pageW / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' });
+    doc.text('CODEBA - Sistema de Ordem de Saída de Carga | Página ' + pg + ' de ' + totalPgs, pageW / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' });
   }
 }
 
@@ -2388,7 +2395,7 @@ async function exportarRelatorioPDF() {
 
     var stamp = agora.toISOString().slice(0,10).replace(/-/g,'');
     doc.save('relatorio-CODEBA-' + stamp + '.pdf');
-    toast('Relatorio exportado em PDF.', 'success');
+    toast('Relatório exportado em PDF.', 'success');
   } catch (err) {
     console.error('Erro ao exportar PDF:', err);
     toast('Erro ao gerar PDF. Tente novamente.', 'error');

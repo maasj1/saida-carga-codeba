@@ -121,9 +121,13 @@ END $$;
 -- ── 3. USUÁRIOS PADRÃO (só insere se o login ainda não existir) ─────
 INSERT INTO public.usuarios (nome, login, perfil) VALUES
   ('Administrador',   'admin',    'Administrador'),
-  ('Fiel de Armazem', 'fiel',     'Emissor (Fiel/Tecnico)'),
+  ('Fiel de Armazém', 'fiel',     'Emissor (Fiel/Técnico)'),
   ('Agente Silva',    'portaria', 'Agente de Portaria')
 ON CONFLICT (login) DO NOTHING;
+
+-- Normaliza nomes legados sem acento (bancos criados antes da padronização).
+UPDATE public.usuarios SET nome = 'Fiel de Armazém' WHERE login = 'fiel' AND nome = 'Fiel de Armazem';
+UPDATE public.usuarios SET perfil = 'Emissor (Fiel/Técnico)' WHERE login = 'fiel' AND perfil = 'Emissor (Fiel/Tecnico)';
 
 -- ── 4. VÍNCULO CONTA ↔ PERFIL (tem que retornar 3 linhas) ───────────
 UPDATE public.usuarios u SET auth_id = a.id FROM auth.users a
